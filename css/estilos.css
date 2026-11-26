@@ -7,7 +7,7 @@
   --marfil: #fff9f7;
   --blanco: #ffffff;
   --primario: #d92b6b;      /* el servidor lo cambia con el color del panel */
-  --rosa: color-mix(in srgb, var(--primario) 84%, #000);
+  --rosa: var(--primario);  /* el color del panel, tal cual */
   --rosa-oscuro: color-mix(in srgb, var(--primario) 66%, #000);
   --rosa-suave: color-mix(in srgb, var(--primario) 24%, #fff);
   --rosa-tenue: color-mix(in srgb, var(--primario) 8%, #fff);
@@ -22,7 +22,7 @@
   --sombra-suave: 0 14px 34px -26px rgba(46, 31, 36, .45);
   --radio: 20px;
   --contenedor: 1180px;
-  --cabecera: 76px;
+  --cabecera: 84px;
   --fuente-titulo: "Cormorant Garamond", Georgia, serif;
   --fuente-texto: "Manrope", "Segoe UI", system-ui, sans-serif;
   --fuente-script: "Parisienne", "Brush Script MT", cursive;
@@ -117,7 +117,7 @@ button, input, select { font: inherit; color: inherit; }
 /* ---------- Barra superior ---------- */
 
 .barra {
-  background: var(--rosa-oscuro);
+  background: var(--primario);
   color: #fff;
   font-size: .78rem;
 }
@@ -215,10 +215,15 @@ button, input, select { font: inherit; color: inherit; }
   color: var(--tinta-suave);
 }
 .marca__logo {
-  width: 44px;
-  height: 44px;
+  width: 56px;
+  height: 56px;
   flex: none;
   object-fit: contain;
+}
+
+@media (min-width: 720px) {
+  :root { --cabecera: 100px; }
+  .marca__logo { width: 76px; height: 76px; }
 }
 
 .menu ul {
@@ -328,6 +333,7 @@ button, input, select { font: inherit; color: inherit; }
 
 @media (max-width: 599px) {
   .cabecera__acciones .boton--compacto { display: none; }
+  .marca__texto { display: none; }
 }
 
 /* ---------- Botones ---------- */
@@ -462,7 +468,9 @@ button, input, select { font: inherit; color: inherit; }
   background: linear-gradient(165deg, #fdeff4 0%, #f6c6d9 58%, #eba8c4 100%);
 }
 .collage__tile--b {
-  background: linear-gradient(165deg, #d92b6b 0%, #b01e53 55%, #8e1742 100%);
+  background: linear-gradient(165deg, var(--rosa) 0%,
+    var(--rosa-oscuro) 55%,
+    color-mix(in srgb, var(--primario) 52%, #000) 100%);
   transform: translateY(2.2rem);
 }
 .collage__dibujo {
@@ -1039,6 +1047,7 @@ button, input, select { font: inherit; color: inherit; }
 .marca--pie .marca__texto strong { color: #fff; }
 .marca--pie .marca__texto small { color: #c9b0b9; }
 .marca--pie .marca__flor { color: var(--oro-claro); }
+.marca--pie .marca__logo { width: 52px; height: 52px; }
 .pie__marca p {
   margin-top: .9rem;
   max-width: 30ch;
@@ -1364,24 +1373,8 @@ button, input, select { font: inherit; color: inherit; }
 
 /* ---------- Movimiento reducido ---------- */
 
-/* Se respeta el sistema, salvo que la persona active las animaciones
-   con el botón del pie (clase motion-on). */
-@media (prefers-reduced-motion: reduce) {
-  html:not(.motion-on) { scroll-behavior: auto; }
-  html:not(.motion-on) *,
-  html:not(.motion-on) *::before,
-  html:not(.motion-on) *::after {
-    animation-duration: .01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: .01ms !important;
-  }
-  html:not(.motion-on) .cinta__pista { animation: none !important; }
-  html:not(.motion-on) [data-revelar] {
-    opacity: 1 !important;
-    translate: 0 !important;
-    filter: none !important;
-  }
-}
+/* Siempre activas, sin importar el sistema ni el dispositivo.
+   El botón del pie permite apagarlas a mano (clase motion-off). */
 
 /* Si la persona las apaga desde el sitio. */
 html.motion-off { scroll-behavior: auto; }

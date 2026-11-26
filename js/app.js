@@ -35,19 +35,16 @@
   );
 
   const estado = { categoria: "todos", q: "", orden: "recomendado" };
-  const sistemaReduce = window.matchMedia(
-    "(prefers-reduced-motion: reduce)"
-  ).matches;
   const guardadoMovimiento = (() => {
     try {
-      return localStorage.getItem("baruj-animaciones");
+      return localStorage.getItem("baruj-movimiento");
     } catch (_) {
       return null;
     }
   })();
-  let animaciones = guardadoMovimiento
-    ? guardadoMovimiento === "si"
-    : !sistemaReduce;
+  // Las animaciones van siempre activas, sin importar el sistema ni el
+  // dispositivo. El botón del pie sigue permitiendo apagarlas a mano.
+  let animaciones = guardadoMovimiento !== "no";
 
   const icono = (nombre) =>
     `<svg class="icono" aria-hidden="true" focusable="false">` +
@@ -379,7 +376,7 @@
     raiz.classList.toggle("con-motion", activo);
     if (guardar) {
       try {
-        localStorage.setItem("baruj-animaciones", activo ? "si" : "no");
+        localStorage.setItem("baruj-movimiento", activo ? "si" : "no");
       } catch (_) {}
     }
     const boton = $("#motion");
@@ -426,7 +423,6 @@
     const collage = $(".collage");
     const hero = $(".hero");
     if (!collage || !hero) return;
-    const fino = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
     let rx = 0;
     let ry = 0;
     let par = 0;
@@ -443,27 +439,25 @@
         requestAnimationFrame(pintar);
       }
     };
-    if (fino) {
-      hero.addEventListener(
-        "pointermove",
-        (evento) => {
-          if (!animaciones) return;
-          const r = hero.getBoundingClientRect();
-          const x = (evento.clientX - r.left) / r.width - 0.5;
-          const y = (evento.clientY - r.top) / r.height - 0.5;
-          ry = x * 6;
-          rx = -y * 4;
-          pedir();
-        },
-        { passive: true }
-      );
-      hero.addEventListener("pointerleave", () => {
+    hero.addEventListener(
+      "pointermove",
+      (evento) => {
         if (!animaciones) return;
-        rx = 0;
-        ry = 0;
+        const r = hero.getBoundingClientRect();
+        const x = (evento.clientX - r.left) / r.width - 0.5;
+        const y = (evento.clientY - r.top) / r.height - 0.5;
+        ry = x * 6;
+        rx = -y * 4;
         pedir();
-      });
-    }
+      },
+      { passive: true }
+    );
+    hero.addEventListener("pointerleave", () => {
+      if (!animaciones) return;
+      rx = 0;
+      ry = 0;
+      pedir();
+    });
     const alScroll = () => {
       if (!animaciones) return;
       const r = collage.getBoundingClientRect();
@@ -478,9 +472,6 @@
   };
 
   const iniciarTilt = () => {
-    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
-      return;
-    }
     document.addEventListener(
       "pointermove",
       (evento) => {

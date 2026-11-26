@@ -298,7 +298,7 @@ const simbolo = () => {
   const info = fs.statSync(path.join(DATOS_DIR, logo));
   return `<img class="marca__logo" src="/media/${logo}?v=${Math.floor(
     info.mtimeMs
-  )}" alt="" width="44" height="44">`;
+  )}" alt="" width="72" height="72">`;
 };
 
 const favicon = () => {
