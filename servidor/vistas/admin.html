@@ -29,63 +29,21 @@
 
   <main class="admin">
     <div class="contenedor">
-      <h1>Hola, {{NOMBRE}}</h1>
+      <h1>{{TITULO_ADMIN}}</h1>
       <p class="admin__texto">
-        Desde aquí conectas la web con el panel de Conecta2. Al sincronizar se
-        traen el logo y el color principal del panel.
+        Administra la imagen del inicio y los usuarios de la tienda.
       </p>
 
       {{AVISO}}
 
-      <section class="admin__tarjetas" aria-label="Estado">
-        <article class="admin__tarjeta">
-          <h2>Panel</h2>
-          <p class="admin__estado">{{PANEL_ESTADO}}</p>
-          <p class="admin__sub">
-            {{PANEL_URL}}<br>
-            Última sincronización: {{PANEL_SINC}}
-          </p>
-        </article>
-        <article class="admin__tarjeta">
-          <h2>Color principal</h2>
-          <p class="admin__color-fila">
-            <span class="admin__color" style="background:{{PANEL_COLOR}}"></span>
-            <span>{{PANEL_COLOR}}</span>
-          </p>
-          <p class="admin__sub">Se usa en botones, enlaces y detalles de la web.</p>
-        </article>
-        <article class="admin__tarjeta">
-          <h2>Logo</h2>
-          {{PANEL_LOGO}}
-          <p class="admin__sub">Se usa en la cabecera y como favicon.</p>
-        </article>
-      </section>
+      {{PANEL_BLOQUE}}
+      {{HERO_BLOQUE}}
+      {{USUARIOS_BLOQUE}}
 
-      <section class="admin__bloque">
-        <h2>Conectar con el panel</h2>
-        <form class="admin__form" method="post" action="/admin/panel">
-          <label for="panel-url">URL del panel</label>
-          <input id="panel-url" name="url" type="url" required
-                 value="{{PANEL_URL}}" placeholder="https://panel.barujcosmetics.com">
-
-          <label for="panel-token">Token del panel</label>
-          <input id="panel-token" name="token" type="password"
-                 autocomplete="off" spellcheck="false"
-                 placeholder="Dejar vacío para conservar el actual">
-
-          <p class="admin__sub">
-            Usa el mismo token del agente de Conecta2. Si ya está guardado,
-            deja el campo vacío.
-          </p>
-
-          <button class="boton boton--rosa" type="submit">Guardar y sincronizar</button>
-        </form>
-      </section>
-
-      <p class="admin__sub admin__cuenta">
-        Sesión de administrador: <strong>{{USUARIO}}</strong>
-      </p>
+      {{PIE_SESION}}
     </div>
   </main>
+
+  <script src="/js/admin.js"></script>
 </body>
 </html>

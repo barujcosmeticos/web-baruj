@@ -1,7 +1,7 @@
 /* ==========================================================================
    Servidor de Baruj Cosmetics
    --------------------------------------------------------------------------
-   Sitio multipágina + administración con superusuario y conexión al panel
+   Sitio multipágina + administración con cuenta inicial y conexión al panel
    de Conecta2 (logo y color principal). Sin dependencias: solo Node.
 
    Variables de entorno:
@@ -24,6 +24,7 @@ const ARCHIVO_DATOS = path.join(DATOS_DIR, "baruj.json");
 const COOKIE = "baruj_sesion";
 const DURACION = 8 * 60 * 60 * 1000;
 const MAX_LOGO = 3 * 1024 * 1024;
+const MAX_HERO = 10 * 1024 * 1024;
 const UA =
   "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 " +
   "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
@@ -66,6 +67,49 @@ const FLOR = `<svg class="marca__flor" viewBox="0 0 32 32" aria-hidden="true" fo
           </g>
         </svg>`;
 
+const SELLO = `<span class="collage__sello">
+            <span class="collage__sello-texto">Calidad premium</span>
+          </span>`;
+
+const CHISPAS = `<span class="chispa chispa--1"></span>
+          <span class="chispa chispa--2"></span>
+          <span class="chispa chispa--3"></span>`;
+
+const COLLAGE_ARCOS = `<div class="collage" aria-hidden="true">
+          <div class="collage__tile collage__tile--a">
+            <svg class="collage__dibujo" viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" focusable="false">
+              <g fill="none" stroke="#a8792f" stroke-opacity=".6" stroke-width="1.35" stroke-linecap="round">
+                <path d="M20 410c-28-70 30-105 2-175s30-105 2-175"/>
+                <path d="M55 410c-28-70 30-105 2-175s30-105 2-175"/>
+                <path d="M90 410c-28-70 30-105 2-175s30-105 2-175"/>
+                <path d="M125 410c-28-70 30-105 2-175s30-105 2-175"/>
+                <path d="M160 410c-28-70 30-105 2-175s30-105 2-175"/>
+                <path d="M195 410c-28-70 30-105 2-175s30-105 2-175"/>
+                <path d="M230 410c-28-70 30-105 2-175s30-105 2-175"/>
+                <path d="M265 410c-28-70 30-105 2-175s30-105 2-175"/>
+                <path d="M300 410c-28-70 30-105 2-175s30-105 2-175"/>
+              </g>
+            </svg>
+          </div>
+          <div class="collage__tile collage__tile--b">
+            <svg class="collage__dibujo" viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" focusable="false">
+              <g fill="none" stroke="#f3d9a4" stroke-opacity=".75" stroke-width="1.5" stroke-linecap="round">
+                <path d="M60 90c30-22 60 22 90 0s60 22 90 0"/>
+                <path d="M60 150c30-22 60 22 90 0s60 22 90 0"/>
+                <path d="M60 210c30-22 60 22 90 0s60 22 90 0"/>
+                <path d="M60 270c30-22 60 22 90 0s60 22 90 0"/>
+                <path d="M30 50l7 17 17 7-17 7-7 17-7-17-17-7 17-7z"/>
+                <path d="M250 300l6 14 14 6-14 6-6 14-6-14-14-6 14-6z"/>
+                <path d="M215 95l5 12 12 5-12 5-5 12-5-12-12-5 12-5z"/>
+                <path d="M70 330l5 12 12 5-12 5-5 12-5-12-12-5 12-5z"/>
+                <path d="M135 210l4 9 9 4-9 4-4 9-4-9-9-4 9-4z"/>
+              </g>
+            </svg>
+          </div>
+          ${SELLO}
+          ${CHISPAS}
+        </div>`;
+
 const CSP = [
   "default-src 'self'",
   "img-src 'self' data:",
@@ -91,6 +135,13 @@ const cargarDatos = () => {
   }
   if (!datos || typeof datos !== "object") datos = {};
   if (!datos.panel || typeof datos.panel !== "object") datos.panel = {};
+  if (!Array.isArray(datos.usuarios)) datos.usuarios = [];
+  if (!datos.hero || typeof datos.hero !== "object") datos.hero = {};
+  if (typeof datos.hero.reemplazado !== "boolean") datos.hero.reemplazado = false;
+  if (typeof datos.hero.archivo !== "string") datos.hero.archivo = "";
+  if (typeof datos.hero.escala !== "number") datos.hero.escala = 1;
+  if (typeof datos.hero.x !== "number") datos.hero.x = 0;
+  if (typeof datos.hero.y !== "number") datos.hero.y = 0;
   if (!datos.secreto) {
     datos.secreto = crypto.randomBytes(32).toString("hex");
     guardarDatos();
@@ -106,6 +157,32 @@ const guardarDatos = () => {
 };
 
 const haySuper = () => Boolean(datos.super && datos.super.clave);
+
+const buscarUsuario = (nombre, rol) =>
+  datos.usuarios.find(
+    (u) => u.usuario === String(nombre || "").toLowerCase() &&
+      (!rol || u.rol === rol)
+  );
+
+const usuariosVisibles = (sesion) => {
+  const lista = Array.isArray(datos.usuarios) ? datos.usuarios : [];
+  if (!sesion) return [];
+  if (sesion.rol === "super") {
+    return lista.filter((u) => u.rol === "admin" || u.rol === "vendedor");
+  }
+  if (sesion.rol === "admin") {
+    return lista.filter((u) => u.rol === "vendedor");
+  }
+  return [];
+};
+
+const puedeGestionar = (sesion, rol) => {
+  if (!sesion) return false;
+  if (sesion.rol === "super") {
+    return rol === "admin" || rol === "vendedor";
+  }
+  return sesion.rol === "admin" && rol === "vendedor";
+};
 
 /* ---------- claves ---------- */
 
@@ -144,9 +221,14 @@ const firmar = (texto) =>
     .update(texto)
     .digest("base64url");
 
-const crearSesion = (rol, usuario) => {
+const crearSesion = (rol, usuario, version = 0) => {
   const carga = Buffer.from(
-    JSON.stringify({ rol, u: usuario, exp: Date.now() + DURACION })
+    JSON.stringify({
+      rol,
+      u: usuario,
+      v: Number(version) || 0,
+      exp: Date.now() + DURACION,
+    })
   ).toString("base64url");
   return `${carga}.${firmar(carga)}`;
 };
@@ -163,11 +245,23 @@ const sesionDe = (req) => {
   try {
     const valor = JSON.parse(Buffer.from(carga, "base64url").toString("utf8"));
     if (Number(valor.exp) <= Date.now()) return null;
-    if (!["admin", "vendedor"].includes(valor.rol)) return null;
+    if (!["super", "admin", "vendedor"].includes(valor.rol)) return null;
     return valor;
   } catch (_) {
     return null;
   }
+};
+
+const sesionValida = (sesion) => {
+  if (!sesion) return null;
+  if (sesion.rol === "super") {
+    return datos.super && datos.super.usuario === sesion.u ? sesion : null;
+  }
+  const usuario = datos.usuarios.find(
+    (u) => u.usuario === sesion.u && u.rol === sesion.rol
+  );
+  if (!usuario) return null;
+  return Number(usuario.v || 0) === Number(sesion.v || 0) ? sesion : null;
 };
 
 const leerCookies = (req) => {
@@ -274,6 +368,29 @@ const leerCuerpo = (req, limite = 20000) =>
 const formulario = async (req) =>
   new URLSearchParams(await leerCuerpo(req));
 
+const leerBinario = (req, limite) =>
+  new Promise((resolver, rechazar) => {
+    const partes = [];
+    let total = 0;
+    req.on("data", (trozo) => {
+      total += trozo.length;
+      if (total > limite) {
+        rechazar(new Error("cuerpo demasiado grande"));
+        req.destroy();
+        return;
+      }
+      partes.push(trozo);
+    });
+    req.on("end", () => resolver(Buffer.concat(partes)));
+    req.on("error", rechazar);
+  });
+
+const esPng = (bytes) =>
+  bytes.length > 8 &&
+  bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e &&
+  bytes[3] === 0x47 && bytes[4] === 0x0d && bytes[5] === 0x0a &&
+  bytes[6] === 0x1a && bytes[7] === 0x0a;
+
 const escapar = (texto) =>
   String(texto ?? "").replace(/[&<>"']/g, (c) => ({
     "&": "&amp;",
@@ -290,6 +407,12 @@ const archivoLogo = () => {
   if (!/^logo\.(png|jpg|jpeg|webp|gif)$/i.test(nombre)) return "";
   const ruta = path.join(DATOS_DIR, nombre);
   return fs.existsSync(ruta) ? nombre : "";
+};
+
+const archivoHero = () => {
+  const nombre = String((datos.hero && datos.hero.archivo) || "");
+  if (nombre !== "hero.png") return "";
+  return fs.existsSync(path.join(DATOS_DIR, nombre)) ? nombre : "";
 };
 
 const simbolo = () => {
@@ -319,6 +442,32 @@ const colorPrincipal = () => {
   return /^#[0-9a-f]{6}$/i.test(color) ? color : "#d92b6b";
 };
 
+const numeroHero = (valor, minimo, maximo, defecto) => {
+  const numero = Number(valor);
+  if (!Number.isFinite(numero)) return defecto;
+  return Math.max(minimo, Math.min(maximo, numero));
+};
+
+const heroHTML = () => {
+  const hero = datos.hero || {};
+  if (!hero.reemplazado) return COLLAGE_ARCOS;
+  const archivo = archivoHero();
+  if (!archivo) {
+    return '<div class="collage collage--foto collage--vacio" aria-hidden="true"></div>';
+  }
+  const info = fs.statSync(path.join(DATOS_DIR, archivo));
+  const escala = numeroHero(hero.escala, 0.2, 2.5, 1);
+  const x = numeroHero(hero.x, -50, 50, 0);
+  const y = numeroHero(hero.y, -50, 50, 0);
+  return `<div class="collage collage--foto" aria-hidden="true">
+          <img class="collage__foto" src="/media/${archivo}?v=${Math.floor(
+            info.mtimeMs
+          )}" alt="" style="--escala:${escala};--x:${x}%;--y:${y}%">
+          ${SELLO}
+          ${CHISPAS}
+        </div>`;
+};
+
 const navHTML = (activo) =>
   NAV.map(
     ([href, texto]) =>
@@ -329,7 +478,7 @@ const navHTML = (activo) =>
 
 const cuentaHTML = (sesion) => {
   const destino =
-    sesion && sesion.rol === "admin"
+    sesion && (sesion.rol === "admin" || sesion.rol === "super")
       ? { href: "/admin", etiqueta: "Ir a la administración", titulo: "Admin" }
       : sesion && sesion.rol === "vendedor"
         ? { href: "/vendedor", etiqueta: "Ir a mi cuenta", titulo: "Mi cuenta" }
@@ -365,6 +514,7 @@ const variablesBase = (req, sesion) => {
     FAVICON_TIPO: icono.tipo,
     COLOR: colorPrincipal(),
     COLOR_CSS: `<style>:root{--primario:${colorPrincipal()}}</style>`,
+    HERO: heroHTML(),
     ANIO: anio(),
   };
 };
@@ -479,31 +629,6 @@ const guardarLogo = (logo) => {
   return true;
 };
 
-const validarVendedor = async (codigo, clave) => {
-  const base = urlPanel();
-  if (!base) return "panel";
-  let respuesta;
-  try {
-    respuesta = await fetch(`${base}/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent": UA,
-      },
-      body: new URLSearchParams({ codigo, clave }),
-      redirect: "manual",
-      signal: AbortSignal.timeout(15000),
-    });
-  } catch (_) {
-    return "conexion";
-  }
-  if (respuesta.status >= 300 && respuesta.status < 400) {
-    const destino = String(respuesta.headers.get("location") || "");
-    return destino.includes("/inicio") ? "ok" : "vendedor";
-  }
-  return "vendedor";
-};
-
 /* ---------- estáticos ---------- */
 
 const servirArchivo = (req, res, absoluto) => {
@@ -553,7 +678,7 @@ const servirPublico = (req, res, ruta) => {
 };
 
 const servirMedia = (req, res, nombre) => {
-  if (!/^logo\.(png|jpg|jpeg|webp|gif)$/i.test(nombre)) {
+  if (!/^(logo\.(png|jpg|jpeg|webp|gif)|hero\.png)$/i.test(nombre)) {
     responder(req, res, 404, "text/plain; charset=utf-8", "No encontrado");
     return;
   }
@@ -568,12 +693,16 @@ const ERRORES = {
   conexion: "No se pudo conectar con el panel. Revisa la URL.",
   panel: "El panel respondió algo inesperado.",
   admin: "Usuario o clave incorrectos.",
-  vendedor: "Código o clave incorrectos en el panel.",
+  vendedor: "Usuario o clave incorrectos.",
   panel_no: "El panel todavía no está conectado.",
   intentos: "Demasiados intentos. Espera unos minutos.",
   datos: "Revisa los datos del formulario.",
   clave: "Las claves no coinciden o son muy cortas (mínimo 8).",
   usuario: "El usuario debe tener entre 3 y 30 caracteres.",
+  existe: "Ese usuario ya existe.",
+  permiso: "No tienes permiso para esa acción.",
+  imagen: "El archivo debe ser un PNG de máximo 10 MB.",
+  hero: "No hay una imagen guardada para ajustar.",
 };
 
 const avisoError = (codigo) =>
@@ -583,13 +712,244 @@ const avisoError = (codigo) =>
       )}</p>`
     : "";
 
+const AVISOS_OK = {
+  "1": "Panel guardado y sincronizado.",
+  panel: "Panel guardado y sincronizado.",
+  usuario: "Usuario creado.",
+  clave: "Clave actualizada.",
+  eliminado: "Usuario eliminado.",
+  hero: "Imagen del inicio publicada.",
+  "hero-quitada": "Imagen quitada.",
+};
+
+const avisoOk = (codigo) =>
+  codigo && AVISOS_OK[codigo]
+    ? `<p class="aviso aviso--ok" role="status">${escapar(
+        AVISOS_OK[codigo]
+      )}</p>`
+    : "";
+
+const panelBloqueHTML = () => {
+  const panel = datos.panel || {};
+  const logo = archivoLogo();
+  const logoTxt = logo
+    ? `<img class="admin__logo" src="/media/${logo}?v=${Date.now()}" alt="Logo del panel">`
+    : '<span class="admin__logo admin__logo--vacio">Sin logo</span>';
+  return `<section class="admin__tarjetas" aria-label="Estado">
+        <article class="admin__tarjeta">
+          <h2>Panel</h2>
+          <p class="admin__estado">${panel.url ? "Conectado" : "Sin conectar"}</p>
+          <p class="admin__sub">
+            ${escapar(panel.url || "")}<br>
+            Última sincronización: ${escapar(panel.sincronizado || "")}
+          </p>
+        </article>
+        <article class="admin__tarjeta">
+          <h2>Color principal</h2>
+          <p class="admin__color-fila">
+            <span class="admin__color" style="background:${colorPrincipal()}"></span>
+            <span>${colorPrincipal()}</span>
+          </p>
+          <p class="admin__sub">Se usa en botones, enlaces y detalles de la web.</p>
+        </article>
+        <article class="admin__tarjeta">
+          <h2>Logo</h2>
+          ${logoTxt}
+          <p class="admin__sub">Se usa en la cabecera y como favicon.</p>
+        </article>
+      </section>
+
+      <section class="admin__bloque">
+        <h2>Conectar con el panel</h2>
+        <form class="admin__form" method="post" action="/admin/panel">
+          <label for="panel-url">URL del panel</label>
+          <input id="panel-url" name="url" type="url" required
+                 value="${escapar(panel.url || "")}" placeholder="https://panel.barujcosmetics.com">
+
+          <label for="panel-token">Token del panel</label>
+          <input id="panel-token" name="token" type="password"
+                 autocomplete="off" spellcheck="false"
+                 placeholder="Dejar vacío para conservar el actual">
+
+          <p class="admin__sub">
+            Usa el mismo token del agente de Conecta2. Si ya está guardado,
+            deja el campo vacío.
+          </p>
+
+          <button class="boton boton--rosa" type="submit">Guardar y sincronizar</button>
+        </form>
+      </section>`;
+};
+
+const heroBloqueHTML = () => {
+  const hero = datos.hero || {};
+  const archivo = archivoHero();
+  const info = archivo ? fs.statSync(path.join(DATOS_DIR, archivo)) : null;
+  const escala = numeroHero(hero.escala, 0.2, 2.5, 1);
+  const x = numeroHero(hero.x, -50, 50, 0);
+  const y = numeroHero(hero.y, -50, 50, 0);
+  const src = archivo
+    ? ` src="/media/${archivo}?v=${Math.floor(info.mtimeMs)}"`
+    : "";
+  return `<section class="admin__bloque" aria-labelledby="hero-titulo">
+        <h2 id="hero-titulo">Imagen del inicio</h2>
+        <p class="admin__texto">
+          Reemplaza los dos arcos por un solo PNG transparente con las modelos.
+          Puedes moverlo y ajustar el tamaño; la vista previa muestra cómo queda
+          antes de aplicar.
+        </p>
+
+        <div class="admin__lienzo">
+          <div class="collage collage--foto admin__collage" id="hero-preview" aria-hidden="true">
+            <img class="collage__foto" id="hero-img"${src}
+                 alt="" style="--escala:${escala};--x:${x}%;--y:${y}%"
+                 data-escala="${escala}" data-x="${x}" data-y="${y}"${archivo ? "" : " hidden"}>
+            <span class="admin__sin-foto" id="hero-vacio"${archivo ? " hidden" : ""}>
+              Sube un PNG transparente para verlo aquí
+            </span>
+            ${SELLO}
+            ${CHISPAS}
+          </div>
+        </div>
+
+        <div class="admin__hero-controles">
+          <label class="admin__archivo" for="hero-archivo">Imagen PNG (máx. 10 MB)</label>
+          <div class="admin__archivo-caja">
+            <input id="hero-archivo" type="file" accept="image/png"
+                   class="admin__archivo-input">
+            <label class="boton boton--contorno boton--compacto" for="hero-archivo">Elegir PNG</label>
+            <span id="hero-archivo-nombre" class="admin__sub">Ningún archivo</span>
+          </div>
+
+          <label for="hero-escala">Tamaño</label>
+          <input id="hero-escala" type="range" min="20" max="250" step="1"
+                 value="${Math.round(escala * 100)}">
+          <span class="admin__escala" id="hero-escala-valor">${Math.round(
+            escala * 100
+          )}%</span>
+
+          <div class="admin__hero-botones">
+            <button class="boton boton--rosa boton--compacto" id="hero-aplicar" type="button">Aplicar</button>
+            <button class="boton boton--contorno boton--compacto" id="hero-reset" type="button">Restablecer</button>
+            <button class="boton boton--contorno boton--compacto" id="hero-quitar" type="button">Quitar imagen</button>
+          </div>
+          <p class="admin__sub" id="hero-estado" role="status"></p>
+        </div>
+
+        <p class="admin__sub">
+          Si quitas la imagen, ese espacio queda vacío con el fondo normal y los
+          arcos no vuelven.
+        </p>
+      </section>`;
+};
+
+const usuariosBloqueHTML = (sesion) => {
+  const orden = { admin: 0, vendedor: 1 };
+  const lista = usuariosVisibles(sesion).slice().sort(
+    (a, b) =>
+      (orden[a.rol] ?? 9) - (orden[b.rol] ?? 9) ||
+      String(a.nombre || a.usuario).localeCompare(
+        String(b.nombre || b.usuario), "es"
+      )
+  );
+  const filas = lista.length
+    ? lista
+        .map((u) => {
+          const nombre = escapar(u.nombre || u.usuario);
+          const rol = u.rol === "admin" ? "Administrador" : "Vendedor";
+          return `<article class="admin__usuario">
+            <div class="admin__usuario-datos">
+              <strong>${nombre}</strong>
+              <span class="admin__sub">${escapar(u.usuario)} · ${rol}</span>
+            </div>
+            <div class="admin__usuario-acciones">
+              <details class="admin__clave">
+                <summary>Cambiar clave</summary>
+                <form class="admin__form admin__form--fila" method="post" action="/admin/usuarios/clave">
+                  <input type="hidden" name="id" value="${escapar(u.id)}">
+                  <input type="password" name="clave" required minlength="8"
+                         placeholder="Nueva clave" autocomplete="new-password">
+                  <input type="password" name="repetir" required minlength="8"
+                         placeholder="Repetir clave" autocomplete="new-password">
+                  <button class="boton boton--contorno boton--compacto" type="submit">Guardar</button>
+                </form>
+              </details>
+              <form method="post" action="/admin/usuarios/eliminar"
+                    data-confirm="¿Eliminar a ${nombre}?">
+                <input type="hidden" name="id" value="${escapar(u.id)}">
+                <button class="boton boton--contorno boton--compacto" type="submit">Eliminar</button>
+              </form>
+            </div>
+          </article>`;
+        })
+        .join("")
+    : '<p class="admin__sub">Todavía no hay usuarios para mostrar.</p>';
+
+  const selectorRol =
+    sesion.rol === "super"
+      ? `<label for="usuario-rol">Rol</label>
+         <select id="usuario-rol" name="rol">
+           <option value="vendedor">Vendedor</option>
+           <option value="admin">Administrador</option>
+         </select>`
+      : '<input type="hidden" name="rol" value="vendedor">';
+
+  return `<section class="admin__bloque" aria-labelledby="usuarios-titulo">
+        <h2 id="usuarios-titulo">Usuarios</h2>
+        <p class="admin__texto">
+          ${
+            sesion.rol === "super"
+              ? "Puedes crear administradores y vendedores, cambiar sus claves y eliminarlos."
+              : "Puedes crear vendedores, cambiar sus claves y eliminarlos."
+          }
+        </p>
+
+        <form class="admin__form" method="post" action="/admin/usuarios/crear">
+          <label for="usuario-nombre">Nombre</label>
+          <input id="usuario-nombre" name="nombre" type="text" maxlength="60"
+                 autocomplete="off" placeholder="Nombre completo">
+
+          <label for="usuario-cuenta">Usuario</label>
+          <input id="usuario-cuenta" name="usuario" type="text" required
+                 minlength="3" maxlength="30" pattern="[A-Za-z0-9._-]{3,30}"
+                 autocomplete="off" autocapitalize="none" spellcheck="false"
+                 placeholder="Ej. vendedor03">
+
+          <label for="usuario-clave">Clave</label>
+          <input id="usuario-clave" name="clave" type="password" required
+                 minlength="8" autocomplete="new-password">
+
+          <label for="usuario-repetir">Repetir clave</label>
+          <input id="usuario-repetir" name="repetir" type="password" required
+                 minlength="8" autocomplete="new-password">
+
+          ${selectorRol}
+
+          <button class="boton boton--rosa" type="submit">Crear usuario</button>
+        </form>
+
+        <div class="admin__usuarios">${filas}</div>
+      </section>`;
+};
+
+const pieSesionHTML = (sesion) => {
+  if (sesion.rol === "super") {
+    return '<p class="admin__sub admin__cuenta">Sesión de administración.</p>';
+  }
+  const usuario = datos.usuarios.find((u) => u.usuario === sesion.u);
+  const nombre = usuario ? usuario.nombre || usuario.usuario : sesion.u;
+  return `<p class="admin__sub admin__cuenta">Sesión de administrador: <strong>${escapar(
+    nombre
+  )}</strong></p>`;
+};
+
 /* ---------- rutas ---------- */
 
 const manejar = async (req, res) => {
   const url = new URL(req.url, "http://localhost");
   const ruta = url.pathname;
   const metodo = req.method;
-  const sesion = sesionDe(req);
+  const sesion = sesionValida(sesionDe(req));
 
   if (metodo !== "GET" && metodo !== "HEAD" && metodo !== "POST") {
     responder(req, res, 405, "text/plain; charset=utf-8", "Método no permitido");
@@ -666,7 +1026,7 @@ const manejar = async (req, res) => {
         guardarDatos();
         const cookie = cookieSesion(
           req,
-          crearSesion("admin", datos.super.usuario),
+          crearSesion("super", datos.super.usuario, 0),
           DURACION / 1000
         );
         redirigir(req, res, "/admin", { "Set-Cookie": cookie });
@@ -685,7 +1045,7 @@ const manejar = async (req, res) => {
   // acceso
   if (ruta === "/entrar") {
     if (metodo === "GET" || metodo === "HEAD") {
-      if (sesion?.rol === "admin") {
+      if (sesion && (sesion.rol === "admin" || sesion.rol === "super")) {
         redirigir(req, res, "/admin");
         return;
       }
@@ -695,9 +1055,6 @@ const manejar = async (req, res) => {
       }
       paginaSimple(req, res, "entrar", {
         ERROR: avisoError(url.searchParams.get("error")),
-        PANEL_NOTA: urlPanel()
-          ? ""
-          : '<p class="acceso__nota">La entrada de vendedores se activa cuando el administrador conecte el panel de Conecta2.</p>',
         SESION: null,
       });
       return;
@@ -715,12 +1072,19 @@ const manejar = async (req, res) => {
     const campos = await formulario(req);
     const usuario = String(campos.get("usuario") || "").trim().toLowerCase();
     const clave = String(campos.get("clave") || "");
-    const superusuario = datos.super || {};
-    if (
-      !superusuario.clave ||
-      superusuario.usuario !== usuario ||
-      !claveOk(clave, superusuario.clave)
-    ) {
+    const raiz = datos.super || {};
+    let rol = "";
+    let version = 0;
+    if (raiz.clave && raiz.usuario === usuario && claveOk(clave, raiz.clave)) {
+      rol = "super";
+    } else {
+      const admin = buscarUsuario(usuario, "admin");
+      if (admin && claveOk(clave, admin.clave)) {
+        rol = "admin";
+        version = Number(admin.v || 0);
+      }
+    }
+    if (!rol) {
       anotarFallo(ip);
       redirigir(req, res, "/entrar?error=admin");
       return;
@@ -728,7 +1092,7 @@ const manejar = async (req, res) => {
     intentos.delete(ip);
     const cookie = cookieSesion(
       req,
-      crearSesion("admin", superusuario.usuario),
+      crearSesion(rol, usuario, version),
       DURACION / 1000
     );
     redirigir(req, res, "/admin", { "Set-Cookie": cookie });
@@ -742,26 +1106,20 @@ const manejar = async (req, res) => {
       return;
     }
     const campos = await formulario(req);
-    const codigo = String(campos.get("codigo") || "").trim();
+    const usuario = String(
+      campos.get("usuario") || campos.get("codigo") || ""
+    ).trim().toLowerCase();
     const clave = String(campos.get("clave") || "");
-    if (!codigo || !clave) {
-      redirigir(req, res, "/entrar?error=vendedor");
-      return;
-    }
-    const resultado = await validarVendedor(codigo, clave);
-    if (resultado !== "ok") {
+    const vendedor = usuario && clave ? buscarUsuario(usuario, "vendedor") : null;
+    if (!vendedor || !claveOk(clave, vendedor.clave)) {
       anotarFallo(ip);
-      redirigir(
-        req,
-        res,
-        `/entrar?error=${resultado === "panel" ? "panel_no" : "vendedor"}`
-      );
+      redirigir(req, res, "/entrar?error=vendedor");
       return;
     }
     intentos.delete(ip);
     const cookie = cookieSesion(
       req,
-      crearSesion("vendedor", codigo),
+      crearSesion("vendedor", vendedor.usuario, Number(vendedor.v || 0)),
       DURACION / 1000
     );
     redirigir(req, res, "/vendedor", { "Set-Cookie": cookie });
@@ -775,7 +1133,7 @@ const manejar = async (req, res) => {
 
   // administración
   if (ruta === "/admin") {
-    if (!sesion || sesion.rol !== "admin") {
+    if (!sesion || (sesion.rol !== "admin" && sesion.rol !== "super")) {
       redirigir(req, res, "/entrar");
       return;
     }
@@ -783,30 +1141,34 @@ const manejar = async (req, res) => {
       responder(req, res, 405, "text/plain; charset=utf-8", "Método no permitido");
       return;
     }
-    const panel = datos.panel || {};
-    const logo = archivoLogo();
+    const esSuper = sesion.rol === "super";
+    const cuenta = esSuper
+      ? null
+      : datos.usuarios.find(
+          (u) => u.usuario === sesion.u && u.rol === "admin"
+        );
+    const nombre = cuenta ? cuenta.nombre || cuenta.usuario : "";
     paginaSimple(req, res, "admin", {
       SESION: sesion,
-      NOMBRE: escapar(datos.super?.nombre || datos.super?.usuario || "administrador"),
-      USUARIO: escapar(datos.super?.usuario || ""),
-      PANEL_URL: escapar(panel.url || ""),
-      PANEL_COLOR: colorPrincipal(),
-      PANEL_LOGO: logo
-        ? `<img class="admin__logo" src="/media/${logo}?v=${Date.now()}" alt="Logo del panel">`
-        : '<span class="admin__logo admin__logo--vacio">Sin logo</span>',
-      PANEL_SINC: escapar(panel.sincronizado || ""),
-      PANEL_ESTADO: panel.url ? "Conectado" : "Sin conectar",
+      TITULO_ADMIN: esSuper ? "Configuración" : `Hola, ${escapar(nombre)}`,
+      PANEL_BLOQUE: esSuper ? panelBloqueHTML() : "",
+      HERO_BLOQUE: heroBloqueHTML(),
+      USUARIOS_BLOQUE: usuariosBloqueHTML(sesion),
+      PIE_SESION: pieSesionHTML(sesion),
       AVISO:
-        url.searchParams.get("ok") === "1"
-          ? '<p class="aviso aviso--ok" role="status">Panel guardado y sincronizado.</p>'
-          : avisoError(url.searchParams.get("error")),
+        avisoOk(url.searchParams.get("ok")) ||
+        avisoError(url.searchParams.get("error")),
     });
     return;
   }
 
   if (ruta === "/admin/panel" && metodo === "POST") {
-    if (!sesion || sesion.rol !== "admin") {
+    if (!sesion) {
       redirigir(req, res, "/entrar");
+      return;
+    }
+    if (sesion.rol !== "super") {
+      redirigir(req, res, "/admin?error=permiso");
       return;
     }
     const campos = await formulario(req);
@@ -840,6 +1202,206 @@ const manejar = async (req, res) => {
     return;
   }
 
+  // usuarios del sitio
+  if (ruta === "/admin/usuarios/crear" && metodo === "POST") {
+    if (!sesion || (sesion.rol !== "admin" && sesion.rol !== "super")) {
+      redirigir(req, res, "/entrar");
+      return;
+    }
+    const campos = await formulario(req);
+    const nombre = String(campos.get("nombre") || "").trim().slice(0, 60);
+    const usuario = String(campos.get("usuario") || "").trim().toLowerCase();
+    const clave = String(campos.get("clave") || "");
+    const repetir = String(campos.get("repetir") || "");
+    const rol = String(campos.get("rol") || "vendedor");
+    if (!puedeGestionar(sesion, rol)) {
+      redirigir(req, res, "/admin?error=permiso");
+      return;
+    }
+    const raiz = String((datos.super && datos.super.usuario) || "").toLowerCase();
+    if (!/^[a-z0-9._-]{3,30}$/.test(usuario)) {
+      redirigir(req, res, "/admin?error=usuario");
+      return;
+    }
+    if (usuario === raiz || buscarUsuario(usuario)) {
+      redirigir(req, res, "/admin?error=existe");
+      return;
+    }
+    if (clave.length < 8 || clave !== repetir) {
+      redirigir(req, res, "/admin?error=clave");
+      return;
+    }
+    datos.usuarios.push({
+      id: crypto.randomUUID(),
+      nombre: nombre || usuario,
+      usuario,
+      clave: hashClave(clave),
+      rol,
+      v: 1,
+      creado: new Date().toISOString(),
+    });
+    guardarDatos();
+    redirigir(req, res, "/admin?ok=usuario");
+    return;
+  }
+
+  if (ruta === "/admin/usuarios/clave" && metodo === "POST") {
+    if (!sesion || (sesion.rol !== "admin" && sesion.rol !== "super")) {
+      redirigir(req, res, "/entrar");
+      return;
+    }
+    const campos = await formulario(req);
+    const id = String(campos.get("id") || "");
+    const objetivo = datos.usuarios.find((u) => u.id === id);
+    if (!objetivo || !puedeGestionar(sesion, objetivo.rol)) {
+      redirigir(req, res, "/admin?error=permiso");
+      return;
+    }
+    const clave = String(campos.get("clave") || "");
+    const repetir = String(campos.get("repetir") || "");
+    if (clave.length < 8 || clave !== repetir) {
+      redirigir(req, res, "/admin?error=clave");
+      return;
+    }
+    objetivo.clave = hashClave(clave);
+    objetivo.v = Number(objetivo.v || 0) + 1;
+    guardarDatos();
+    redirigir(req, res, "/admin?ok=clave");
+    return;
+  }
+
+  if (ruta === "/admin/usuarios/eliminar" && metodo === "POST") {
+    if (!sesion || (sesion.rol !== "admin" && sesion.rol !== "super")) {
+      redirigir(req, res, "/entrar");
+      return;
+    }
+    const campos = await formulario(req);
+    const id = String(campos.get("id") || "");
+    const objetivo = datos.usuarios.find((u) => u.id === id);
+    if (!objetivo || !puedeGestionar(sesion, objetivo.rol)) {
+      redirigir(req, res, "/admin?error=permiso");
+      return;
+    }
+    datos.usuarios = datos.usuarios.filter((u) => u.id !== id);
+    guardarDatos();
+    redirigir(req, res, "/admin?ok=eliminado");
+    return;
+  }
+
+  // imagen del inicio
+  if (ruta === "/admin/hero" && metodo === "POST") {
+    if (!sesion) {
+      responder(req, res, 401, "application/json; charset=utf-8",
+        JSON.stringify({ error: "sesion" }));
+      return;
+    }
+    if (sesion.rol !== "admin" && sesion.rol !== "super") {
+      responder(req, res, 403, "application/json; charset=utf-8",
+        JSON.stringify({ error: "permiso" }));
+      return;
+    }
+    let bytes;
+    try {
+      bytes = await leerBinario(req, MAX_HERO);
+    } catch (_) {
+      responder(req, res, 413, "application/json; charset=utf-8",
+        JSON.stringify({ error: "imagen" }));
+      return;
+    }
+    if (!bytes.length || !esPng(bytes)) {
+      responder(req, res, 400, "application/json; charset=utf-8",
+        JSON.stringify({ error: "imagen" }));
+      return;
+    }
+    const escala = numeroHero(url.searchParams.get("escala"), 0.2, 2.5, 1);
+    const x = numeroHero(url.searchParams.get("x"), -50, 50, 0);
+    const y = numeroHero(url.searchParams.get("y"), -50, 50, 0);
+    fs.mkdirSync(DATOS_DIR, { recursive: true, mode: 0o700 });
+    const destino = path.join(DATOS_DIR, "hero.png");
+    const temporal = destino + ".tmp";
+    fs.writeFileSync(temporal, bytes, { mode: 0o600 });
+    fs.renameSync(temporal, destino);
+    datos.hero = {
+      reemplazado: true,
+      archivo: "hero.png",
+      escala,
+      x,
+      y,
+    };
+    guardarDatos();
+    responder(req, res, 200, "application/json; charset=utf-8",
+      JSON.stringify({ ok: true }));
+    return;
+  }
+
+  if (ruta === "/admin/hero/ajustar" && metodo === "POST") {
+    if (!sesion) {
+      responder(req, res, 401, "application/json; charset=utf-8",
+        JSON.stringify({ error: "sesion" }));
+      return;
+    }
+    if (sesion.rol !== "admin" && sesion.rol !== "super") {
+      responder(req, res, 403, "application/json; charset=utf-8",
+        JSON.stringify({ error: "permiso" }));
+      return;
+    }
+    if (!archivoHero()) {
+      responder(req, res, 400, "application/json; charset=utf-8",
+        JSON.stringify({ error: "hero" }));
+      return;
+    }
+    const cuerpo = await leerCuerpo(req, 20000);
+    let ajuste;
+    try {
+      ajuste = JSON.parse(cuerpo);
+    } catch (_) {
+      ajuste = Object.fromEntries(new URLSearchParams(cuerpo));
+    }
+    const escala = numeroHero(
+      ajuste.escala, 0.2, 2.5, datos.hero.escala
+    );
+    const x = numeroHero(ajuste.x, -50, 50, datos.hero.x);
+    const y = numeroHero(ajuste.y, -50, 50, datos.hero.y);
+    datos.hero = {
+      reemplazado: true,
+      archivo: "hero.png",
+      escala,
+      x,
+      y,
+    };
+    guardarDatos();
+    responder(req, res, 200, "application/json; charset=utf-8",
+      JSON.stringify({ ok: true }));
+    return;
+  }
+
+  if (ruta === "/admin/hero/quitar" && metodo === "POST") {
+    if (!sesion) {
+      responder(req, res, 401, "application/json; charset=utf-8",
+        JSON.stringify({ error: "sesion" }));
+      return;
+    }
+    if (sesion.rol !== "admin" && sesion.rol !== "super") {
+      responder(req, res, 403, "application/json; charset=utf-8",
+        JSON.stringify({ error: "permiso" }));
+      return;
+    }
+    try {
+      fs.unlinkSync(path.join(DATOS_DIR, "hero.png"));
+    } catch (_) {}
+    datos.hero = {
+      reemplazado: true,
+      archivo: "",
+      escala: 1,
+      x: 0,
+      y: 0,
+    };
+    guardarDatos();
+    responder(req, res, 200, "application/json; charset=utf-8",
+      JSON.stringify({ ok: true }));
+    return;
+  }
+
   // vendedor
   if (ruta === "/vendedor") {
     if (!sesion || sesion.rol !== "vendedor") {
@@ -850,9 +1412,14 @@ const manejar = async (req, res) => {
       responder(req, res, 405, "text/plain; charset=utf-8", "Método no permitido");
       return;
     }
+    const cuenta = datos.usuarios.find(
+      (u) => u.usuario === sesion.u && u.rol === "vendedor"
+    );
     paginaSimple(req, res, "vendedor", {
       SESION: sesion,
-      CODIGO: escapar(sesion.u || ""),
+      NOMBRE: escapar(
+        cuenta ? cuenta.nombre || cuenta.usuario : sesion.u
+      ),
     });
     return;
   }
@@ -939,7 +1506,7 @@ setInterval(() => {
 servidor.listen(PUERTO, () => {
   console.log(`Baruj Cosmetics en http://localhost:${PUERTO}`);
   if (!haySuper()) {
-    console.log("Primera vez: crea el superusuario en /instalar");
+    console.log("Primera vez: crea la cuenta inicial en /instalar");
   }
   if (!urlPanel()) {
     console.log("Panel de Conecta2 sin conectar todavía.");

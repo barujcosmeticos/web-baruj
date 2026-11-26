@@ -1,7 +1,7 @@
 # web-baruj
 
 Sitio multipágina de **Baruj Cosmetics**: inicio, productos, nosotros y contacto.
-Incluye administración con superusuario y conexión con el panel de Conecta2
+Incluye administración con cuenta inicial y conexión con el panel de Conecta2
 para traer el **logo** y el **color principal**. Sin dependencias: solo Node 18+.
 
 ## Páginas
@@ -13,8 +13,8 @@ para traer el **logo** y el **color principal**. Sin dependencias: solo Node 18+
 | `/nosotros` | Marca, valores y opiniones |
 | `/contacto` | WhatsApp, redes y envíos |
 | `/entrar` | Entrada de administrador o vendedor |
-| `/admin` | Administración (solo superusuario) |
-| `/vendedor` | Cuenta del vendedor (credenciales del panel) |
+| `/admin` | Administración (cuenta inicial y administradores) |
+| `/vendedor` | Cuenta local del vendedor |
 
 ## Primera vez
 
@@ -25,7 +25,7 @@ para traer el **logo** y el **color principal**. Sin dependencias: solo Node 18+
    ```
 
 2. Abre `http://localhost:3000`. La primera vez redirige a **`/instalar`**.
-3. Crea el **superusuario** (nombre, usuario y clave). Solo se puede hacer una vez.
+3. Crea la **cuenta inicial** (nombre, usuario y clave). Solo se puede hacer una vez.
 4. Entra a `/admin` y conecta el panel:
    - **URL del panel**: `https://panel.barujcosmetics.com`
    - **Token del panel**: el **mismo token del agente de Conecta2** (no se crea otro).
@@ -33,8 +33,23 @@ para traer el **logo** y el **color principal**. Sin dependencias: solo Node 18+
 5. Al sincronizar se traen el **logo** (cabecera y favicon) y el **color
    principal** (botones, enlaces y detalles).
 
-El login de **vendedores** usa sus credenciales del panel de Conecta2. No hay
-que crear usuarios aparte en la web.
+### Usuarios
+
+Los usuarios son locales de la web; no se validan contra el panel.
+
+- La **cuenta inicial** es única, no aparece en las listas y solo se usa para
+  entrar por el login de administrador. Puede crear administradores y
+  vendedores, cambiarles la clave y eliminarlos.
+- Un **administrador** puede cambiar la imagen del inicio y crear, cambiar la
+  clave o eliminar **vendedores**.
+- Un **vendedor** entra a `/vendedor`; todavía no puede ver pedidos ni catálogo.
+
+### Imagen del inicio
+
+En `/admin`, la cuenta inicial y los administradores pueden subir un **PNG
+transparente de hasta 10 MB** que reemplaza los dos arcos del hero. La vista
+previa permite moverlo y ajustar el tamaño antes de aplicar. Al quitar la
+imagen, ese espacio queda vacío con el fondo normal y los arcos no vuelven.
 
 ## Variables de entorno
 
@@ -43,8 +58,8 @@ que crear usuarios aparte en la web.
 | `PORT` | Puerto del servidor | `3000` |
 | `DATA_DIR` | Carpeta de datos persistentes | `./datos` |
 
-En Docker, `DATA_DIR=/data`. Ahí viven `baruj.json` (superusuario, panel y
-secreto de sesión) y el logo descargado.
+En Docker, `DATA_DIR=/data`. Ahí viven `baruj.json` (cuenta inicial, usuarios,
+imagen del inicio, panel y secreto de sesión), el logo y la imagen.
 
 ## Estructura
 
@@ -55,6 +70,7 @@ css/estilos.css         Tokens de marca, componentes y responsive
 css/admin.css           Acceso, panel y formularios
 js/productos.js         Datos: tienda, categorías y productos
 js/app.js               Catálogo, filtros, ficha y enlaces
+js/admin.js             Vista previa de la imagen, arrastre y confirmaciones
 assets/favicon.svg      Icono por defecto (si el panel no tiene logo)
 assets/img/             Fondo decorativo y fotos
 Dockerfile              Imagen para Coolify
@@ -102,12 +118,12 @@ detalles; el dorado se mantiene como acento decorativo.
 
 1. **Build Pack: Dockerfile**.
 2. **Puerto: 3000**.
-3. **Persistent Storage**: monta un volumen en **`/data`**. Sin esto, el
-   superusuario y la configuración se pierden en cada redeploy.
+3. **Persistent Storage**: monta un volumen en **`/data`**. Sin esto, la
+   cuenta inicial y la configuración se pierden en cada redeploy.
 4. Dominios: `https://barujcosmetics.com` y `https://www.barujcosmetics.com`.
 5. Healthcheck: `/health`.
 
-No hace falta ninguna variable `ADMIN_TOKEN`: el superusuario se crea en
+No hace falta ninguna variable `ADMIN_TOKEN`: la cuenta inicial se crea en
 `/instalar` y el token del panel se guarda desde `/admin`.
 
 Para probar la imagen en local:
@@ -119,7 +135,7 @@ docker run --rm -p 3000:3000 -v "$PWD/datos:/data" web-baruj
 
 ## Seguridad
 
-- La clave del superusuario se guarda con `scrypt`.
+- Las claves se guardan con `scrypt`.
 - El token del panel nunca se envía al navegador ni se muestra en el HTML.
 - La sesión va en una cookie `HttpOnly`/`SameSite=Lax`, firmada con un secreto
   propio guardado en `/data`.
@@ -131,6 +147,6 @@ docker run --rm -p 3000:3000 -v "$PWD/datos:/data" web-baruj
 
 ```bash
 git add .
-git commit -m "sitio multipagina con superusuario y conexion al panel"
+git commit -m "sitio multipagina con administracion de usuarios e imagen del inicio"
 git push
 ```

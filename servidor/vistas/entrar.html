@@ -47,15 +47,17 @@
 
         <div class="acceso__panel acceso__panel--vendedor">
           <form class="acceso__form" method="post" action="/entrar/vendedor">
-            <label for="vendedor-codigo">Código de vendedor</label>
-            <input id="vendedor-codigo" name="codigo" type="text" required
-                   autocomplete="username" autocapitalize="characters" spellcheck="false">
-            <label for="vendedor-clave">Clave del panel</label>
+            <label for="vendedor-usuario">Usuario</label>
+            <input id="vendedor-usuario" name="usuario" type="text" required
+                   autocomplete="username" autocapitalize="none" spellcheck="false">
+            <label for="vendedor-clave">Clave</label>
             <input id="vendedor-clave" name="clave" type="password" required
                    autocomplete="current-password">
             <button class="boton boton--rosa" type="submit">Entrar como vendedor</button>
           </form>
-          {{PANEL_NOTA}}
+          <p class="acceso__nota">
+            Usa el usuario y la clave que te entregó el administrador.
+          </p>
         </div>
       </div>
 

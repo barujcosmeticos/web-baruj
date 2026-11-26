@@ -303,3 +303,111 @@
   color: var(--tinta-suave);
 }
 .admin__cuenta { margin-top: 2rem; }
+
+/* ---------- imagen del inicio ---------- */
+
+.admin__lienzo {
+  margin-top: 1.2rem;
+  padding: 1.5rem;
+  border: 1px solid var(--borde);
+  border-radius: 18px;
+  background:
+    linear-gradient(95deg, rgba(255, 249, 247, .98) 0%, rgba(255, 249, 247, .92) 36%,
+      rgba(255, 249, 247, .5) 72%, rgba(255, 249, 247, .28) 100%),
+    radial-gradient(50% 46% at 6% 86%, rgba(247, 236, 221, .85), rgba(247, 236, 221, 0) 72%),
+    url("../assets/img/fondo-floral.jpg") 82% top / cover no-repeat,
+    var(--marfil);
+  overflow: hidden;
+}
+.admin__collage {
+  width: min(100%, 340px);
+  margin-inline: auto;
+  touch-action: none;
+}
+.admin__sin-foto {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  border: 1px dashed #d9b7c3;
+  border-radius: 18px;
+  color: var(--tinta-suave);
+  font-size: .85rem;
+  text-align: center;
+  pointer-events: none;
+}
+.admin__hero-controles {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: .6rem 1rem;
+  margin-top: 1rem;
+}
+.admin__archivo {
+  grid-column: 1 / -1;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--tinta-suave);
+}
+.admin__archivo-caja {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .7rem;
+}
+.admin__archivo-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+}
+#hero-escala { width: 100%; accent-color: var(--primario); }
+.admin__escala { font-size: .85rem; font-variant-numeric: tabular-nums; }
+.admin__hero-botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  grid-column: 1 / -1;
+}
+.admin__form select {
+  min-height: 48px;
+  padding: .6rem .85rem;
+  border: 1px solid #e4ccd5;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 1rem;
+}
+.admin__form--fila {
+  max-width: none;
+  grid-template-columns: 1fr 1fr auto;
+}
+.admin__form--fila .boton { margin-top: 0; align-self: center; }
+.admin__usuarios { display: grid; gap: .7rem; margin-top: 1.6rem; }
+.admin__usuario {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--borde);
+  border-radius: 14px;
+  background: #fff;
+}
+.admin__usuario-datos { display: grid; }
+.admin__usuario-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .6rem;
+}
+.admin__clave { font-size: .85rem; }
+.admin__clave summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--rosa-oscuro);
+}
+.admin__clave .admin__form { margin-top: .6rem; }
