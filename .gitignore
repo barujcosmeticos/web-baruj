@@ -1,0 +1,12 @@
+# Referencia de diseño: no se publica
+referencia/
+
+# Sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Dependencias y editores
+node_modules/
+.vscode/
+.idea/
