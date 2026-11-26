@@ -328,19 +328,16 @@ const navHTML = (activo) =>
   ).join("");
 
 const cuentaHTML = (sesion) => {
-  if (sesion && sesion.rol === "admin") {
-    return `<a class="cuenta" href="/admin" aria-label="Ir a la administración">
+  const destino =
+    sesion && sesion.rol === "admin"
+      ? { href: "/admin", etiqueta: "Ir a la administración", titulo: "Admin" }
+      : sesion && sesion.rol === "vendedor"
+        ? { href: "/vendedor", etiqueta: "Ir a mi cuenta", titulo: "Mi cuenta" }
+        : { href: "/entrar", etiqueta: "Iniciar sesión", titulo: "Entrar" };
+  return `<a class="cuenta" href="${destino.href}" aria-label="${destino.etiqueta}" title="${destino.titulo}">
       <svg class="icono" aria-hidden="true"><use href="#i-usuario"></use></svg>
-      <span>Admin</span></a>`;
-  }
-  if (sesion && sesion.rol === "vendedor") {
-    return `<a class="cuenta" href="/vendedor" aria-label="Ir a mi cuenta">
-      <svg class="icono" aria-hidden="true"><use href="#i-usuario"></use></svg>
-      <span>Mi cuenta</span></a>`;
-  }
-  return `<a class="cuenta" href="/entrar" aria-label="Iniciar sesión">
-    <svg class="icono" aria-hidden="true"><use href="#i-usuario"></use></svg>
-    <span>Entrar</span></a>`;
+      <span class="solo-lectores">${destino.titulo}</span>
+    </a>`;
 };
 
 const anio = () => String(new Date().getFullYear());

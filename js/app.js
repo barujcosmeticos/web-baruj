@@ -35,6 +35,19 @@
   );
 
   const estado = { categoria: "todos", q: "", orden: "recomendado" };
+  const sistemaReduce = window.matchMedia(
+    "(prefers-reduced-motion: reduce)"
+  ).matches;
+  const guardadoMovimiento = (() => {
+    try {
+      return localStorage.getItem("baruj-animaciones");
+    } catch (_) {
+      return null;
+    }
+  })();
+  let animaciones = guardadoMovimiento
+    ? guardadoMovimiento === "si"
+    : !sistemaReduce;
 
   const icono = (nombre) =>
     `<svg class="icono" aria-hidden="true" focusable="false">` +
@@ -162,25 +175,27 @@
         const precio =
           p.precio == null ? "Precio por WhatsApp" : formatoPrecio.format(p.precio);
         return `
-        <article class="producto">
-          <a class="producto__enlace" href="#p-${p.id}"
-             aria-label="Ver ${escapar(p.nombre)}">
-            <span class="producto__media" data-cat="${escapar(p.categoria)}">
-              ${p.imagen
-                ? `<img src="${escapar(p.imagen)}" alt="" loading="lazy">`
-                : icono(p.icono)}
-              ${p.etiqueta
-                ? `<span class="producto__etiqueta">${escapar(p.etiqueta)}</span>`
-                : ""}
-            </span>
-            <span class="producto__texto">
-              <span class="producto__categoria">${escapar(categoria)}</span>
-              <span class="producto__nombre">${escapar(p.nombre)}</span>
-              <span class="producto__precio">${escapar(precio)}</span>
-              <span class="producto__ver">Ver detalles ${icono("flecha")}</span>
-            </span>
-          </a>
-        </article>`;
+        <div class="producto-marco">
+          <article class="producto">
+            <a class="producto__enlace" href="#p-${p.id}"
+               aria-label="Ver ${escapar(p.nombre)}">
+              <span class="producto__media" data-cat="${escapar(p.categoria)}">
+                ${p.imagen
+                  ? `<img src="${escapar(p.imagen)}" alt="" loading="lazy">`
+                  : icono(p.icono)}
+                ${p.etiqueta
+                  ? `<span class="producto__etiqueta">${escapar(p.etiqueta)}</span>`
+                  : ""}
+              </span>
+              <span class="producto__texto">
+                <span class="producto__categoria">${escapar(categoria)}</span>
+                <span class="producto__nombre">${escapar(p.nombre)}</span>
+                <span class="producto__precio">${escapar(precio)}</span>
+                <span class="producto__ver">Ver detalles ${icono("flecha")}</span>
+              </span>
+            </a>
+          </article>
+        </div>`;
       })
       .join("");
   };
@@ -344,6 +359,187 @@
       alDesplazar();
       window.addEventListener("scroll", alDesplazar, { passive: true });
     }
+
+    const botonMotion = $("#motion");
+    if (botonMotion) {
+      botonMotion.addEventListener("click", () => {
+        aplicarAnimaciones(!animaciones, true);
+        if (animaciones) prepararRevelados();
+      });
+    }
+  };
+
+  /* ---------- movimiento ---------- */
+
+  const aplicarAnimaciones = (activo, guardar) => {
+    animaciones = activo;
+    const raiz = document.documentElement;
+    raiz.classList.toggle("motion-on", activo);
+    raiz.classList.toggle("motion-off", !activo);
+    raiz.classList.toggle("con-motion", activo);
+    if (guardar) {
+      try {
+        localStorage.setItem("baruj-animaciones", activo ? "si" : "no");
+      } catch (_) {}
+    }
+    const boton = $("#motion");
+    if (boton) {
+      boton.setAttribute("aria-pressed", String(activo));
+      boton.textContent = activo ? "Animaciones: sí" : "Animaciones: no";
+    }
+    if (!activo) {
+      $$(".collage").forEach((el) => {
+        el.style.setProperty("--rx", "0deg");
+        el.style.setProperty("--ry", "0deg");
+        el.style.setProperty("--par", "0px");
+      });
+      $$(".producto").forEach((el) => {
+        el.style.setProperty("--px", "0deg");
+        el.style.setProperty("--py", "0deg");
+      });
+    }
+  };
+
+  const iniciarProgreso = () => {
+    const barra = $("#progreso");
+    if (!barra) return;
+    let pendiente = false;
+    const pintar = () => {
+      const altura = document.documentElement.scrollHeight - window.innerHeight;
+      const avance =
+        altura > 0 ? Math.min(1, Math.max(0, window.scrollY / altura)) : 0;
+      barra.style.transform = `scaleX(${avance})`;
+      pendiente = false;
+    };
+    const pedir = () => {
+      if (!pendiente) {
+        pendiente = true;
+        requestAnimationFrame(pintar);
+      }
+    };
+    pintar();
+    window.addEventListener("scroll", pedir, { passive: true });
+    window.addEventListener("resize", pedir);
+  };
+
+  const iniciarCollage = () => {
+    const collage = $(".collage");
+    const hero = $(".hero");
+    if (!collage || !hero) return;
+    const fino = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    let rx = 0;
+    let ry = 0;
+    let par = 0;
+    let pendiente = false;
+    const pintar = () => {
+      collage.style.setProperty("--rx", `${rx.toFixed(2)}deg`);
+      collage.style.setProperty("--ry", `${ry.toFixed(2)}deg`);
+      collage.style.setProperty("--par", `${par.toFixed(1)}px`);
+      pendiente = false;
+    };
+    const pedir = () => {
+      if (!pendiente) {
+        pendiente = true;
+        requestAnimationFrame(pintar);
+      }
+    };
+    if (fino) {
+      hero.addEventListener(
+        "pointermove",
+        (evento) => {
+          if (!animaciones) return;
+          const r = hero.getBoundingClientRect();
+          const x = (evento.clientX - r.left) / r.width - 0.5;
+          const y = (evento.clientY - r.top) / r.height - 0.5;
+          ry = x * 6;
+          rx = -y * 4;
+          pedir();
+        },
+        { passive: true }
+      );
+      hero.addEventListener("pointerleave", () => {
+        if (!animaciones) return;
+        rx = 0;
+        ry = 0;
+        pedir();
+      });
+    }
+    const alScroll = () => {
+      if (!animaciones) return;
+      const r = collage.getBoundingClientRect();
+      par = Math.max(
+        -18,
+        Math.min(18, (r.top - window.innerHeight / 2) * -0.035)
+      );
+      pedir();
+    };
+    alScroll();
+    window.addEventListener("scroll", alScroll, { passive: true });
+  };
+
+  const iniciarTilt = () => {
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+      return;
+    }
+    document.addEventListener(
+      "pointermove",
+      (evento) => {
+        if (!animaciones) return;
+        const carta = evento.target.closest(".producto");
+        if (!carta) return;
+        const r = carta.getBoundingClientRect();
+        const x = (evento.clientX - r.left) / r.width - 0.5;
+        const y = (evento.clientY - r.top) / r.height - 0.5;
+        carta.style.setProperty("--py", `${(x * 5).toFixed(2)}deg`);
+        carta.style.setProperty("--px", `${(-y * 4).toFixed(2)}deg`);
+      },
+      { passive: true }
+    );
+    document.addEventListener(
+      "pointerout",
+      (evento) => {
+        if (!animaciones) return;
+        const carta = evento.target.closest(".producto");
+        if (!carta) return;
+        if (!carta.contains(evento.relatedTarget)) {
+          carta.style.setProperty("--py", "0deg");
+          carta.style.setProperty("--px", "0deg");
+        }
+      },
+      { passive: true }
+    );
+  };
+
+  let reveladosListos = false;
+  const prepararRevelados = () => {
+    if (reveladosListos || !animaciones || !("IntersectionObserver" in window)) {
+      return;
+    }
+    reveladosListos = true;
+    const observador = new IntersectionObserver(
+      (entradas) => {
+        for (const entrada of entradas) {
+          if (entrada.isIntersecting) {
+            entrada.target.classList.add("visible");
+            observador.unobserve(entrada.target);
+          }
+        }
+      },
+      { threshold: 0.12, rootMargin: "0px 0px -8% 0px" }
+    );
+    const marcar = (el, i = 0) => {
+      if (el.dataset.revelar !== undefined) return;
+      el.dataset.revelar = "";
+      el.style.setProperty("--retraso", `${Math.min(i, 4) * 70}ms`);
+      observador.observe(el);
+    };
+    $$(".seccion__cabecera").forEach((el) => marcar(el));
+    $$(".categoria").forEach((el, i) => marcar(el, i));
+    $$(".producto-marco").forEach((el, i) => marcar(el, i));
+    $$(".pilar").forEach((el, i) => marcar(el, i));
+    $$(".opinion").forEach((el, i) => marcar(el, i));
+    $$(".contacto__tarjeta").forEach((el, i) => marcar(el, i));
+    $$(".marca-bloque__texto, .contacto__texto").forEach((el) => marcar(el));
   };
 
   /* ---------- arranque ---------- */
@@ -362,6 +558,11 @@
   pintarProductos();
   inicializarEventos();
   fichaDesdeHash();
+  aplicarAnimaciones(animaciones, false);
+  iniciarProgreso();
+  iniciarCollage();
+  iniciarTilt();
+  prepararRevelados();
 
   const anio = $("#anio");
   if (anio) anio.textContent = String(new Date().getFullYear());
