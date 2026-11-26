@@ -6,10 +6,11 @@
 :root {
   --marfil: #fff9f7;
   --blanco: #ffffff;
-  --rosa: #d92b6b;          /* acento principal (texto blanco encima: 4.6:1) */
-  --rosa-oscuro: #b01e53;   /* texto pequeño sobre claro */
-  --rosa-suave: #f9dce6;
-  --rosa-tenue: #fff1f5;
+  --primario: #d92b6b;      /* el servidor lo cambia con el color del panel */
+  --rosa: color-mix(in srgb, var(--primario) 84%, #000);
+  --rosa-oscuro: color-mix(in srgb, var(--primario) 66%, #000);
+  --rosa-suave: color-mix(in srgb, var(--primario) 24%, #fff);
+  --rosa-tenue: color-mix(in srgb, var(--primario) 8%, #fff);
   --oro: #b98a3e;           /* solo decorativo */
   --oro-texto: #8a6224;
   --oro-claro: #e7c98f;
@@ -213,6 +214,12 @@ button, input, select { font: inherit; color: inherit; }
   text-transform: uppercase;
   color: var(--tinta-suave);
 }
+.marca__logo {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  object-fit: contain;
+}
 
 .menu ul {
   display: flex;
@@ -243,7 +250,31 @@ button, input, select { font: inherit; color: inherit; }
   transition: transform .2s ease;
 }
 .menu a:hover::after,
-.menu a:focus-visible::after { transform: scaleX(1); }
+.menu a:focus-visible::after,
+.menu a.activo::after { transform: scaleX(1); }
+
+.cuenta {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  min-height: 42px;
+  padding: .4rem .85rem;
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--tinta);
+  font-size: .88rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: border-color .2s ease, color .2s ease;
+}
+.cuenta:hover { border-color: var(--rosa); color: var(--rosa-oscuro); }
+.cuenta .icono { width: 1.15rem; height: 1.15rem; }
+
+@media (max-width: 599px) {
+  .cuenta { width: 42px; justify-content: center; padding: 0; }
+  .cuenta span { display: none; }
+}
 
 .cabecera__acciones { display: flex; align-items: center; gap: .6rem; }
 
@@ -497,6 +528,7 @@ button, input, select { font: inherit; color: inherit; }
 }
 .seccion--opiniones { background: var(--blanco); }
 
+.seccion__cabecera:not(.seccion__cabecera--fila) h1::after,
 .seccion__cabecera:not(.seccion__cabecera--fila) h2::after {
   content: "";
   display: block;
@@ -511,6 +543,7 @@ button, input, select { font: inherit; color: inherit; }
   margin: 0 auto 2.5rem;
   text-align: center;
 }
+.seccion__cabecera h1,
 .seccion__cabecera h2 {
   font-family: var(--fuente-titulo);
   font-weight: 600;
@@ -811,6 +844,7 @@ button, input, select { font: inherit; color: inherit; }
 /* ---------- Marca ---------- */
 
 .marca-bloque { display: grid; gap: 2.5rem; }
+.marca-bloque__texto h1,
 .marca-bloque__texto h2 {
   font-family: var(--fuente-titulo);
   font-weight: 600;
@@ -843,6 +877,7 @@ button, input, select { font: inherit; color: inherit; }
   color: var(--oro-texto);
 }
 .pilar__icono .icono { width: 1.5rem; height: 1.5rem; }
+.pilar h2,
 .pilar h3 {
   grid-area: titulo;
   font-family: var(--fuente-titulo);
@@ -889,6 +924,63 @@ button, input, select { font: inherit; color: inherit; }
 
 @media (min-width: 760px) {
   .opiniones { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.2rem; }
+}
+
+/* ---------- Contacto ---------- */
+
+.contacto { display: grid; gap: 2.5rem; }
+.contacto__texto h1 {
+  font-family: var(--fuente-titulo);
+  font-weight: 600;
+  font-size: clamp(2.2rem, 5vw, 3.2rem);
+  line-height: 1.08;
+}
+.contacto__texto p {
+  margin-top: 1rem;
+  max-width: 48ch;
+  color: var(--tinta-suave);
+}
+.contacto__texto .boton { margin-top: 1.6rem; }
+.contacto__nota { margin-top: 1.1rem; font-size: .82rem; }
+.contacto__tarjetas { display: grid; gap: 1rem; }
+.contacto__tarjeta {
+  padding: 1.5rem;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: #fff;
+  box-shadow: var(--sombra-suave);
+}
+.contacto__tarjeta h2 {
+  font-family: var(--fuente-titulo);
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+.contacto__tarjeta p {
+  margin-top: .5rem;
+  font-size: .9rem;
+  color: var(--tinta-suave);
+}
+.contacto__tarjeta a {
+  display: inline-block;
+  margin-top: .8rem;
+  color: var(--rosa-oscuro);
+  font-size: .88rem;
+  font-weight: 600;
+}
+.contacto__redes { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: .8rem; }
+.contacto__redes a {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  margin-top: 0;
+}
+
+@media (min-width: 900px) {
+  .contacto {
+    grid-template-columns: 1.05fr .95fr;
+    align-items: center;
+    gap: 4rem;
+  }
 }
 
 /* ---------- Banda de compra ---------- */

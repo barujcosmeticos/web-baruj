@@ -72,9 +72,11 @@
   /* ---------- categorías y filtros ---------- */
 
   const pintarCategorias = () => {
-    $("#lista-categorias").innerHTML = CATEGORIAS.map(
+    const contenedor = $("#lista-categorias");
+    if (!contenedor) return;
+    contenedor.innerHTML = CATEGORIAS.map(
       (c) => `
-      <a class="categoria" href="#productos" data-filtro="${escapar(c.id)}">
+      <a class="categoria" href="/productos?categoria=${encodeURIComponent(c.id)}">
         <span class="categoria__media" data-cat="${escapar(c.id)}">
           ${icono(c.icono)}
           <span class="categoria__flecha" aria-hidden="true">${icono("flecha")}</span>
@@ -86,11 +88,13 @@
   };
 
   const pintarChips = () => {
+    const contenedor = $("#chips");
+    if (!contenedor) return;
     const opciones = [
       { id: "todos", nombre: "Todos" },
       ...CATEGORIAS.map((c) => ({ id: c.id, nombre: c.nombre })),
     ];
-    $("#chips").innerHTML = opciones
+    contenedor.innerHTML = opciones
       .map(
         (o) => `
       <button class="chip" type="button" data-filtro="${escapar(o.id)}"
@@ -138,15 +142,18 @@
   };
 
   const pintarProductos = () => {
-    const lista = filtrar();
     const contenedor = $("#lista-productos");
+    if (!contenedor) return;
+    const destacados = Number(contenedor.dataset.destacados || 0);
+    const lista = destacados ? PRODUCTOS.slice(0, destacados) : filtrar();
     const vacio = $("#vacio");
     const cuenta = $("#cuenta");
 
-    cuenta.textContent =
-      lista.length === 1 ? "1 producto" : `${lista.length} productos`;
-
-    vacio.hidden = lista.length > 0;
+    if (cuenta) {
+      cuenta.textContent =
+        lista.length === 1 ? "1 producto" : `${lista.length} productos`;
+    }
+    if (vacio) vacio.hidden = lista.length > 0;
     contenedor.hidden = lista.length === 0;
 
     contenedor.innerHTML = lista
@@ -190,6 +197,7 @@
   const fichaCtaTexto = $("#ficha-whatsapp-texto");
 
   const abrirFicha = (id) => {
+    if (!ficha) return;
     const producto = PRODUCTOS.find((p) => p.id === id);
     if (!producto) return;
     const categoria = categoriaPorId[producto.categoria]?.nombre || "";
@@ -217,7 +225,7 @@
       fichaCtaTexto.textContent = "Consultar por WhatsApp";
       fichaCta.onclick = null;
     } else {
-      fichaCta.href = "#contacto";
+      fichaCta.href = "/contacto";
       fichaCta.removeAttribute("target");
       fichaCta.removeAttribute("rel");
       fichaCtaTexto.textContent = "Escríbenos";
@@ -228,8 +236,6 @@
     document.body.classList.add("sin-scroll");
   };
 
-  const cerrarFicha = () => ficha.close();
-
   const fichaDesdeHash = () => {
     const coincidencia = location.hash.match(/^#p-(\d+)$/);
     if (coincidencia) abrirFicha(Number(coincidencia[1]));
@@ -238,100 +244,117 @@
   /* ---------- eventos ---------- */
 
   const inicializarEventos = () => {
-    // categorías y chips
-    document.addEventListener("click", (evento) => {
-      const destino = evento.target.closest("[data-filtro]");
-      if (destino) {
-        evento.preventDefault();
-        estado.categoria = destino.dataset.filtro;
+    const chips = $("#chips");
+    if (chips) {
+      chips.addEventListener("click", (evento) => {
+        const chip = evento.target.closest(".chip");
+        if (!chip) return;
+        estado.categoria = chip.dataset.filtro;
         marcarChips();
         pintarProductos();
-        if (destino.classList.contains("categoria")) {
-          const seccion = $("#productos");
-          const suave = !window.matchMedia("(prefers-reduced-motion: reduce)")
-            .matches;
-          seccion.scrollIntoView({ behavior: suave ? "smooth" : "auto" });
-        }
-        return;
-      }
-      if (evento.target.closest("[data-cerrar]")) cerrarFicha();
-      if (evento.target === ficha) cerrarFicha();
-    });
+      });
+    }
 
-    // búsqueda
-    let temporizador;
-    $("#buscar").addEventListener("input", (evento) => {
-      clearTimeout(temporizador);
-      const valor = evento.target.value;
-      temporizador = setTimeout(() => {
-        estado.q = valor;
+    const buscar = $("#buscar");
+    if (buscar) {
+      let temporizador;
+      buscar.addEventListener("input", (evento) => {
+        clearTimeout(temporizador);
+        const valor = evento.target.value;
+        temporizador = setTimeout(() => {
+          estado.q = valor;
+          pintarProductos();
+        }, 140);
+      });
+    }
+
+    const orden = $("#orden");
+    if (orden) {
+      orden.addEventListener("change", (evento) => {
+        estado.orden = evento.target.value;
         pintarProductos();
-      }, 140);
-    });
+      });
+    }
 
-    // orden
-    $("#orden").addEventListener("change", (evento) => {
-      estado.orden = evento.target.value;
-      pintarProductos();
-    });
+    const limpiar = $("#limpiar");
+    if (limpiar) {
+      limpiar.addEventListener("click", () => {
+        estado.categoria = "todos";
+        estado.q = "";
+        if (buscar) buscar.value = "";
+        if (orden) orden.value = "recomendado";
+        estado.orden = "recomendado";
+        marcarChips();
+        pintarProductos();
+      });
+    }
 
-    // limpiar filtros
-    $("#limpiar").addEventListener("click", () => {
-      estado.categoria = "todos";
-      estado.q = "";
-      $("#buscar").value = "";
-      $("#orden").value = "recomendado";
-      estado.orden = "recomendado";
-      marcarChips();
-      pintarProductos();
-    });
-
-    // ficha desde la URL
     window.addEventListener("hashchange", () => {
       if (/^#p-\d+$/.test(location.hash)) {
         fichaDesdeHash();
-      } else if (ficha.open) {
-        cerrarFicha();
-      }
-    });
-    ficha.addEventListener("close", () => {
-      document.body.classList.remove("sin-scroll");
-      if (location.hash.startsWith("#p-")) {
-        history.replaceState(null, "", location.pathname + location.search);
+      } else if (ficha && ficha.open) {
+        ficha.close();
       }
     });
 
-    // menú móvil
+    if (ficha) {
+      ficha.addEventListener("close", () => {
+        document.body.classList.remove("sin-scroll");
+        if (location.hash.startsWith("#p-")) {
+          history.replaceState(null, "", location.pathname + location.search);
+        }
+      });
+      ficha.addEventListener("click", (evento) => {
+        if (evento.target === ficha) ficha.close();
+      });
+    }
+
+    document.addEventListener("click", (evento) => {
+      if (evento.target.closest("[data-cerrar]") && ficha) ficha.close();
+    });
+
     const cabecera = $("#cabecera");
     const botonMenu = $(".menu-boton");
-    const cerrarMenu = () => {
-      cabecera.classList.remove("cabecera--abierta");
-      botonMenu.setAttribute("aria-expanded", "false");
-      botonMenu.setAttribute("aria-label", "Abrir menú");
-    };
-    botonMenu.addEventListener("click", () => {
-      const abierto = cabecera.classList.toggle("cabecera--abierta");
-      botonMenu.setAttribute("aria-expanded", String(abierto));
-      botonMenu.setAttribute("aria-label", abierto ? "Cerrar menú" : "Abrir menú");
-    });
-    $$("#menu a").forEach((enlace) =>
-      enlace.addEventListener("click", cerrarMenu)
-    );
-    document.addEventListener("keydown", (evento) => {
-      if (evento.key === "Escape") cerrarMenu();
-    });
-    window.addEventListener("resize", () => {
-      if (window.innerWidth >= 900) cerrarMenu();
-    });
+    if (cabecera && botonMenu) {
+      const cerrarMenu = () => {
+        cabecera.classList.remove("cabecera--abierta");
+        botonMenu.setAttribute("aria-expanded", "false");
+        botonMenu.setAttribute("aria-label", "Abrir menú");
+      };
+      botonMenu.addEventListener("click", () => {
+        const abierto = cabecera.classList.toggle("cabecera--abierta");
+        botonMenu.setAttribute("aria-expanded", String(abierto));
+        botonMenu.setAttribute(
+          "aria-label",
+          abierto ? "Cerrar menú" : "Abrir menú"
+        );
+      });
+      $$("#menu a").forEach((enlace) =>
+        enlace.addEventListener("click", cerrarMenu)
+      );
+      document.addEventListener("keydown", (evento) => {
+        if (evento.key === "Escape") cerrarMenu();
+      });
+      window.addEventListener("resize", () => {
+        if (window.innerWidth >= 900) cerrarMenu();
+      });
 
-    // sombra de la cabecera
-    const alDesplazar = () =>
-      cabecera.classList.toggle("pegada", window.scrollY > 6);
-    alDesplazar();
-    window.addEventListener("scroll", alDesplazar, { passive: true });
+      const alDesplazar = () =>
+        cabecera.classList.toggle("pegada", window.scrollY > 6);
+      alDesplazar();
+      window.addEventListener("scroll", alDesplazar, { passive: true });
+    }
   };
 
   /* ---------- arranque ---------- */
+
+  const categoriaInicial = new URLSearchParams(location.search).get("categoria");
+  if (
+    categoriaInicial &&
+    CATEGORIAS.some((c) => c.id === categoriaInicial)
+  ) {
+    estado.categoria = categoriaInicial;
+  }
 
   prepararEnlaces();
   pintarCategorias();

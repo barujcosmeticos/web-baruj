@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es-CO">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Entrar — Baruj Cosmetics</title>
+  <meta name="theme-color" content="{{COLOR}}">
+  <link rel="icon" href="{{FAVICON}}" type="{{FAVICON_TIPO}}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/estilos.css">
+  <link rel="stylesheet" href="/css/admin.css">
+  {{COLOR_CSS}}
+</head>
+<body class="acceso-fondo">
+  <main class="acceso">
+    <div class="acceso__caja">
+      <a class="marca marca--centro" href="/" aria-label="Baruj Cosmetics, ir al sitio">
+        {{SIMBOLO}}
+        <span class="marca__texto"><strong>BARUJ</strong><small>Cosmetics</small></span>
+      </a>
+
+      <h1>Entrar</h1>
+      <p class="acceso__texto">Elige cómo quieres entrar.</p>
+
+      {{ERROR}}
+
+      <div class="acceso__roles">
+        <input class="acceso__radio" type="radio" name="rol" id="rol-admin" checked>
+        <label class="acceso__rol" for="rol-admin">Administrador</label>
+        <input class="acceso__radio" type="radio" name="rol" id="rol-vendedor">
+        <label class="acceso__rol" for="rol-vendedor">Vendedor</label>
+
+        <div class="acceso__panel acceso__panel--admin">
+          <form class="acceso__form" method="post" action="/entrar/admin">
+            <label for="admin-usuario">Usuario</label>
+            <input id="admin-usuario" name="usuario" type="text" required
+                   autocomplete="username" autocapitalize="none" spellcheck="false">
+            <label for="admin-clave">Clave</label>
+            <input id="admin-clave" name="clave" type="password" required
+                   autocomplete="current-password">
+            <button class="boton boton--rosa" type="submit">Entrar como administrador</button>
+          </form>
+        </div>
+
+        <div class="acceso__panel acceso__panel--vendedor">
+          <form class="acceso__form" method="post" action="/entrar/vendedor">
+            <label for="vendedor-codigo">Código de vendedor</label>
+            <input id="vendedor-codigo" name="codigo" type="text" required
+                   autocomplete="username" autocapitalize="characters" spellcheck="false">
+            <label for="vendedor-clave">Clave del panel</label>
+            <input id="vendedor-clave" name="clave" type="password" required
+                   autocomplete="current-password">
+            <button class="boton boton--rosa" type="submit">Entrar como vendedor</button>
+          </form>
+          {{PANEL_NOTA}}
+        </div>
+      </div>
+
+      <a class="acceso__volver" href="/">Volver al sitio</a>
+    </div>
+  </main>
+</body>
+</html>

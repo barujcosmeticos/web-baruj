@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es-CO">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Primera configuración — Baruj Cosmetics</title>
+  <meta name="theme-color" content="{{COLOR}}">
+  <link rel="icon" href="{{FAVICON}}" type="{{FAVICON_TIPO}}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/estilos.css">
+  <link rel="stylesheet" href="/css/admin.css">
+  {{COLOR_CSS}}
+</head>
+<body class="acceso-fondo">
+  <main class="acceso">
+    <div class="acceso__caja">
+      <a class="marca marca--centro" href="/" aria-label="Baruj Cosmetics">
+        {{SIMBOLO}}
+        <span class="marca__texto"><strong>BARUJ</strong><small>Cosmetics</small></span>
+      </a>
+
+      <h1>Primera configuración</h1>
+      <p class="acceso__texto">Crea el superusuario. Solo se puede hacer una vez.</p>
+
+      {{ERROR}}
+
+      <form class="acceso__form" method="post" action="/instalar">
+        <label for="nombre">Nombre</label>
+        <input id="nombre" name="nombre" type="text" autocomplete="name"
+               maxlength="60" placeholder="Tu nombre">
+        <label for="usuario">Usuario</label>
+        <input id="usuario" name="usuario" type="text" required
+               autocomplete="username" autocapitalize="none" spellcheck="false"
+               minlength="3" maxlength="30" placeholder="Ej. juan">
+        <label for="clave">Clave</label>
+        <input id="clave" name="clave" type="password" required
+               autocomplete="new-password" minlength="8">
+        <label for="repetir">Repetir clave</label>
+        <input id="repetir" name="repetir" type="password" required
+               autocomplete="new-password" minlength="8">
+        <button class="boton boton--rosa" type="submit">Crear administrador</button>
+      </form>
+
+      <p class="acceso__nota">
+        La clave debe tener al menos 8 caracteres. Después podrás conectar el
+        panel de Conecta2 desde la administración.
+      </p>
+    </div>
+  </main>
+</body>
+</html>

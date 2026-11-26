@@ -1,0 +1,37 @@
+    <section class="seccion seccion--productos" id="productos">
+      <div class="contenedor">
+        <div class="seccion__cabecera seccion__cabecera--fila">
+          <div>
+            <h1>Productos</h1>
+            <p>Selección de lo que más nos piden. ¿Buscas algo más? Escríbenos.</p>
+          </div>
+          <p class="catalogo__cuenta" id="cuenta" aria-live="polite"></p>
+        </div>
+
+        <div class="controles">
+          <div class="buscador">
+            <label class="solo-lectores" for="buscar">Buscar productos</label>
+            <svg class="icono buscador__icono" aria-hidden="true"><use href="#i-buscar"></use></svg>
+            <input id="buscar" type="search" placeholder="Buscar por nombre o categoría" autocomplete="off">
+          </div>
+          <div class="controles__orden">
+            <label for="orden">Ordenar por</label>
+            <select id="orden">
+              <option value="recomendado">Recomendados</option>
+              <option value="nombre">Nombre (A–Z)</option>
+              <option value="categoria">Categoría</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="chips" id="chips" role="group" aria-label="Filtrar por categoría"></div>
+
+        <div class="productos" id="lista-productos"></div>
+
+        <div class="vacio" id="vacio" hidden>
+          <p class="vacio__titulo">No encontramos productos con esa búsqueda.</p>
+          <p>Prueba con otra palabra o revisa todas las categorías.</p>
+          <button class="boton boton--contorno" type="button" id="limpiar">Limpiar filtros</button>
+        </div>
+      </div>
+    </section>

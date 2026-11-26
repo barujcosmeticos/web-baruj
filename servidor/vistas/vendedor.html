@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es-CO">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Mi cuenta — Baruj Cosmetics</title>
+  <meta name="theme-color" content="{{COLOR}}">
+  <link rel="icon" href="{{FAVICON}}" type="{{FAVICON_TIPO}}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/estilos.css">
+  <link rel="stylesheet" href="/css/admin.css">
+  {{COLOR_CSS}}
+</head>
+<body class="admin-fondo">
+  <header class="admin-barra">
+    <div class="contenedor admin-barra__fila">
+      <a class="marca" href="/" aria-label="Baruj Cosmetics, ir al sitio">
+        {{SIMBOLO}}
+        <span class="marca__texto"><strong>BARUJ</strong><small>Cosmetics</small></span>
+      </a>
+      <form method="post" action="/salir">
+        <button class="boton boton--contorno boton--compacto" type="submit">Cerrar sesión</button>
+      </form>
+    </div>
+  </header>
+
+  <main class="admin">
+    <div class="contenedor">
+      <h1>Hola, {{CODIGO}}</h1>
+      <p class="admin__texto">
+        Tu cuenta quedó conectada al panel de Conecta2. Muy pronto aquí vas a
+        poder ver tus pedidos y el catálogo.
+      </p>
+
+      <section class="admin__tarjetas" aria-label="Tu cuenta">
+        <article class="admin__tarjeta">
+          <h2>Pedidos</h2>
+          <p class="admin__estado admin__estado--pendiente">Próximamente</p>
+          <p class="admin__sub">Tus pedidos aparecerán en este espacio.</p>
+        </article>
+        <article class="admin__tarjeta">
+          <h2>Catálogo</h2>
+          <p class="admin__estado admin__estado--pendiente">Próximamente</p>
+          <p class="admin__sub">Podrás consultar productos y precios.</p>
+        </article>
+        <article class="admin__tarjeta">
+          <h2>Sitio</h2>
+          <p class="admin__estado">Publicado</p>
+          <p class="admin__sub"><a href="/productos">Ver el catálogo</a></p>
+        </article>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
