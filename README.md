@@ -1,29 +1,57 @@
 # web-baruj
 
 Catálogo web de **Baruj Cosmetics**: belleza, uñas, cosméticos y fibras premium.
-HTML, CSS y JavaScript sin dependencias ni build. La idea es que más adelante
-el catálogo se alimente desde el panel de Conecta2.
+El sitio es HTML, CSS y JavaScript; un servidor Node mínimo (sin dependencias)
+lo sirve y protege la sección `/admin` con un token.
 
 ## Ver la página
 
-Abre `index.html` en el navegador. No necesita servidor para funcionar.
+Solo el catálogo: abre `index.html` en el navegador.
 
-Si quieres servirla en local:
+Con administración hace falta Node 18 o superior:
 
 ```bash
-npx serve .
+ADMIN_TOKEN="tu-token" node server.js
+```
+
+Luego abre `http://localhost:3000` (catálogo) y `http://localhost:3000/admin`
+(administración). En PowerShell:
+
+```powershell
+$env:ADMIN_TOKEN="tu-token"; node server.js
 ```
 
 ## Estructura
 
 ```
-index.html          Página completa (hero, categorías, catálogo, marca, opiniones)
-css/estilos.css     Tokens de marca, componentes y responsive
-js/productos.js     Datos: tienda, categorías y productos
-js/app.js           Filtros, búsqueda, ficha de producto y enlaces
-assets/favicon.svg  Icono de la pestaña
-referencia/         Imagen de referencia del diseño (no se publica)
+index.html             Página completa (hero, categorías, catálogo, marca, opiniones)
+css/estilos.css        Tokens de marca, componentes y responsive
+css/admin.css          Estilos del acceso y del panel de administración
+js/productos.js        Datos: tienda, categorías y productos
+js/app.js              Filtros, búsqueda, ficha de producto y enlaces
+assets/favicon.svg     Icono de la pestaña
+assets/img/            Imágenes (fondo decorativo y fotos de productos)
+server.js              Servidor: sitio estático + login de /admin
+servidor/              Páginas privadas de administración (no se sirven como estáticas)
+Dockerfile             Imagen para desplegar en Coolify
+robots.txt             Bloquea /admin en buscadores
+referencia/            Imágenes de referencia (ignoradas por git)
 ```
+
+## Administración
+
+- URL: `/admin` → pide el **token de administrador**.
+- El token se toma de la variable de entorno `ADMIN_TOKEN`. **Usa el mismo
+  token del agente de Conecta2**, no hace falta crear otro.
+- `SESSION_SECRET` es opcional: si no se define, la sesión se firma con el
+  token. Cambiar el token cierra las sesiones abiertas.
+- `PORT` es opcional (por defecto 3000).
+- La sesión dura 8 horas, la cookie es `HttpOnly` y `SameSite=Lax`, y el login
+  se bloquea 10 minutos después de 8 intentos fallidos.
+- El token nunca se envía al navegador ni se guarda en el repositorio: el
+  formulario lo compara en el servidor.
+- Todavía no está conectado al panel de Conecta2; por ahora el panel solo
+  muestra el estado. Más adelante esa sesión servirá para llamar a la API.
 
 ## Qué cambiar
 
@@ -71,6 +99,33 @@ Los textos del hero, la marca y las opiniones están en `index.html`. Las
 opiniones actuales son de ejemplo: reemplázalas por reseñas reales antes de
 publicar.
 
+### 5. Fondo decorativo
+
+El fondo floral es `assets/img/fondo-floral.jpg` y se usa en el hero, las
+categorías, la sección de marca y el acceso. Puedes reemplazarlo por otra
+imagen con el mismo nombre y proporción vertical.
+
+## Despliegue en Coolify
+
+1. **Build Pack: Dockerfile** (ya no sirve el build pack “Static” porque el
+   login necesita el servidor).
+2. Puerto del contenedor: **3000**.
+3. Variables de entorno:
+   - `ADMIN_TOKEN` = el token del agente de Conecta2.
+   - `SESSION_SECRET` (opcional).
+4. Dominios: `https://barujcosmetics.com` y `https://www.barujcosmetics.com`.
+5. Healthcheck: `/health`.
+
+Si el token del agente se renueva, actualiza `ADMIN_TOKEN` en Coolify y
+redespliega.
+
+Para probar la imagen en local:
+
+```bash
+docker build -t web-baruj .
+docker run --rm -p 3000:3000 -e ADMIN_TOKEN="tu-token" web-baruj
+```
+
 ## Conectar con Conecta2 (más adelante)
 
 El panel de Conecta2 ya expone catálogo por `/api/app/*`. La idea es reemplazar
@@ -86,17 +141,12 @@ Así el diseño no cambia: solo cambia de dónde salen los datos.
 
 ```bash
 git add .
-git commit -m "base del catálogo"
-git push -u origin main
+git commit -m "catálogo con administración"
+git push
 ```
-
-## Publicación
-
-Es un sitio estático: se puede publicar en GitHub Pages, Netlify, Vercel o
-cualquier hosting que sirva archivos. No necesita variables de entorno ni base
-de datos.
 
 ## Notas
 
 - El repo es público; no guardar credenciales aquí.
-- La carpeta `referencia/` está ignorada por git: es solo para comparar el diseño.
+- La carpeta `referencia/` está ignorada por git.
+- `servidor/` y `server.js` no se sirven como archivos estáticos.

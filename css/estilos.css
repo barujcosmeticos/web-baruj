@@ -347,8 +347,10 @@ button, input, select { font: inherit; color: inherit; }
   position: relative;
   overflow: hidden;
   background:
-    radial-gradient(58% 52% at 84% 16%, #fde7ef 0%, rgba(253, 231, 239, 0) 72%),
-    radial-gradient(46% 42% at 6% 84%, #f7ecdd 0%, rgba(247, 236, 221, 0) 72%),
+    linear-gradient(95deg, rgba(255, 249, 247, .98) 0%, rgba(255, 249, 247, .92) 36%,
+      rgba(255, 249, 247, .5) 72%, rgba(255, 249, 247, .28) 100%),
+    radial-gradient(50% 46% at 6% 86%, rgba(247, 236, 221, .85), rgba(247, 236, 221, 0) 72%),
+    url("../assets/img/fondo-floral.jpg") 82% top / cover no-repeat,
     var(--marfil);
 }
 .hero__interior {
@@ -480,12 +482,29 @@ button, input, select { font: inherit; color: inherit; }
 /* ---------- Secciones ---------- */
 
 .seccion { padding-block: 4.25rem; }
+.seccion--categorias {
+  background:
+    linear-gradient(rgba(255, 249, 247, .95), rgba(255, 249, 247, .95)),
+    url("../assets/img/fondo-floral.jpg") 80% 40% / cover no-repeat;
+}
 .seccion--productos { background: var(--blanco); }
 .seccion--marca {
-  background: var(--rosa-tenue);
+  background:
+    linear-gradient(100deg, rgba(255, 241, 245, .97) 0%, rgba(255, 241, 245, .93) 48%,
+      rgba(255, 241, 245, .55) 100%),
+    url("../assets/img/fondo-floral.jpg") 78% center / cover no-repeat;
   border-block: 1px solid var(--borde);
 }
 .seccion--opiniones { background: var(--blanco); }
+
+.seccion__cabecera:not(.seccion__cabecera--fila) h2::after {
+  content: "";
+  display: block;
+  width: 72px;
+  height: 1px;
+  margin: .95rem auto 0;
+  background: linear-gradient(90deg, transparent, var(--oro-claro), transparent);
+}
 
 .seccion__cabecera {
   max-width: 640px;
@@ -968,6 +987,12 @@ button, input, select { font: inherit; color: inherit; }
   font-size: .76rem;
   color: #bda9b1;
 }
+.pie__admin {
+  color: var(--oro-claro);
+  font-weight: 600;
+  text-decoration: none;
+}
+.pie__admin:hover { text-decoration: underline; }
 
 @media (min-width: 760px) {
   .pie__fila { grid-template-columns: 1.3fr .8fr .9fr; gap: 2.5rem; }
