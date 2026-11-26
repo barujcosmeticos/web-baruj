@@ -67,10 +67,6 @@ const FLOR = `<svg class="marca__flor" viewBox="0 0 32 32" aria-hidden="true" fo
           </g>
         </svg>`;
 
-const SELLO = `<span class="collage__sello">
-            <span class="collage__sello-texto">Calidad premium</span>
-          </span>`;
-
 const CHISPAS = `<span class="chispa chispa--1"></span>
           <span class="chispa chispa--2"></span>
           <span class="chispa chispa--3"></span>`;
@@ -106,7 +102,6 @@ const COLLAGE_ARCOS = `<div class="collage" aria-hidden="true">
               </g>
             </svg>
           </div>
-          ${SELLO}
           ${CHISPAS}
         </div>`;
 
@@ -142,6 +137,10 @@ const cargarDatos = () => {
   if (typeof datos.hero.escala !== "number") datos.hero.escala = 1;
   if (typeof datos.hero.x !== "number") datos.hero.x = 0;
   if (typeof datos.hero.y !== "number") datos.hero.y = 0;
+  if (!datos.textos || typeof datos.textos !== "object") datos.textos = {};
+  if (!datos.textos.hero || typeof datos.textos.hero !== "object") {
+    datos.textos.hero = {};
+  }
   if (!datos.secreto) {
     datos.secreto = crypto.randomBytes(32).toString("hex");
     guardarDatos();
@@ -448,6 +447,27 @@ const numeroHero = (valor, minimo, maximo, defecto) => {
   return Math.max(minimo, Math.min(maximo, numero));
 };
 
+const TEXTO_HERO_DEFECTO = {
+  linea: "Elegir calidad",
+  scripto: "también es una forma de amor propio",
+  parrafo:
+    "Belleza, uñas, cosméticos y fibras premium elegidos para acompañarte " +
+    "todos los días. Piezas que se sienten tan bien como se ven.",
+};
+
+const textoHero = () => {
+  const guardado = (datos.textos && datos.textos.hero) || {};
+  const elegir = (clave) =>
+    typeof guardado[clave] === "string"
+      ? guardado[clave]
+      : TEXTO_HERO_DEFECTO[clave];
+  return {
+    linea: elegir("linea"),
+    scripto: elegir("scripto"),
+    parrafo: elegir("parrafo"),
+  };
+};
+
 const heroHTML = () => {
   const hero = datos.hero || {};
   if (!hero.reemplazado) return COLLAGE_ARCOS;
@@ -463,7 +483,6 @@ const heroHTML = () => {
           <img class="collage__foto" src="/media/${archivo}?v=${Math.floor(
             info.mtimeMs
           )}" alt="" style="--escala:${escala};--x:${x}%;--y:${y}%">
-          ${SELLO}
           ${CHISPAS}
         </div>`;
 };
@@ -515,6 +534,9 @@ const variablesBase = (req, sesion) => {
     COLOR: colorPrincipal(),
     COLOR_CSS: `<style>:root{--primario:${colorPrincipal()}}</style>`,
     HERO: heroHTML(),
+    HERO_LINEA: escapar(textoHero().linea),
+    HERO_SCRIPT: escapar(textoHero().scripto),
+    HERO_PARRAFO: escapar(textoHero().parrafo),
     ANIO: anio(),
   };
 };
@@ -720,6 +742,7 @@ const AVISOS_OK = {
   eliminado: "Usuario eliminado.",
   hero: "Imagen del inicio publicada.",
   "hero-quitada": "Imagen quitada.",
+  textos: "Textos guardados.",
 };
 
 const avisoOk = (codigo) =>
@@ -791,24 +814,40 @@ const heroBloqueHTML = () => {
   const src = archivo
     ? ` src="/media/${archivo}?v=${Math.floor(info.mtimeMs)}"`
     : "";
+  const t = textoHero();
   return `<section class="admin__bloque" aria-labelledby="hero-titulo">
-        <h2 id="hero-titulo">Imagen del inicio</h2>
+        <h2 id="hero-titulo">Inicio</h2>
         <p class="admin__texto">
-          Reemplaza los dos arcos por un solo PNG transparente con las modelos.
-          Puedes moverlo y ajustar el tamaño; la vista previa muestra cómo queda
-          antes de aplicar.
+          La vista previa muestra el inicio completo: el texto a la izquierda y
+          el PNG a la derecha. Puedes mover y ajustar el PNG, y editar los
+          textos sin cambiar la tipografía ni el color.
         </p>
 
-        <div class="admin__lienzo">
-          <div class="collage collage--foto admin__collage" id="hero-preview" aria-hidden="true">
-            <img class="collage__foto" id="hero-img"${src}
-                 alt="" style="--escala:${escala};--x:${x}%;--y:${y}%"
-                 data-escala="${escala}" data-x="${x}" data-y="${y}"${archivo ? "" : " hidden"}>
-            <span class="admin__sin-foto" id="hero-vacio"${archivo ? " hidden" : ""}>
-              Sube un PNG transparente para verlo aquí
-            </span>
-            ${SELLO}
-            ${CHISPAS}
+        <div class="admin__lienzo admin__hero-lienzo">
+          <div class="hero admin__hero">
+            <div class="contenedor hero__interior">
+              <div class="hero__texto">
+                <h1>
+                  <span class="hero__linea" id="prev-linea">${escapar(t.linea)}</span>
+                  <span class="hero__scripto" id="prev-scripto">${escapar(t.scripto)}</span>
+                </h1>
+                <p class="hero__parrafo" id="prev-parrafo">${escapar(t.parrafo)}</p>
+                <div class="hero__acciones" aria-hidden="true">
+                  <span class="boton boton--rosa">Descubre Baruj</span>
+                  <span class="boton boton--contorno">Ver categorías</span>
+                </div>
+              </div>
+
+              <div class="collage collage--foto admin__collage" id="hero-preview" aria-hidden="true">
+                <img class="collage__foto" id="hero-img"${src}
+                     alt="" style="--escala:${escala};--x:${x}%;--y:${y}%"
+                     data-escala="${escala}" data-x="${x}" data-y="${y}"${archivo ? "" : " hidden"}>
+                <span class="admin__sin-foto" id="hero-vacio"${archivo ? " hidden" : ""}>
+                  Sube un PNG transparente para verlo aquí
+                </span>
+                ${CHISPAS}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -840,6 +879,26 @@ const heroBloqueHTML = () => {
           Si quitas la imagen, ese espacio queda vacío con el fondo normal y los
           arcos no vuelven.
         </p>
+
+        <form class="admin__form admin__textos" method="post" action="/admin/textos/hero">
+          <h3>Textos del inicio</h3>
+          <label for="texto-linea">Título principal (H1)</label>
+          <input id="texto-linea" name="linea" type="text" maxlength="120"
+                 value="${escapar(t.linea)}">
+
+          <label for="texto-scripto">Frase en script</label>
+          <input id="texto-scripto" name="scripto" type="text" maxlength="160"
+                 value="${escapar(t.scripto)}">
+
+          <label for="texto-parrafo">Párrafo</label>
+          <textarea id="texto-parrafo" name="parrafo" rows="4"
+                    maxlength="600">${escapar(t.parrafo)}</textarea>
+
+          <p class="admin__sub">
+            Cada campo conserva la tipografía y el color del texto original.
+          </p>
+          <button class="boton boton--rosa" type="submit">Guardar textos</button>
+        </form>
       </section>`;
 };
 
@@ -1399,6 +1458,25 @@ const manejar = async (req, res) => {
     guardarDatos();
     responder(req, res, 200, "application/json; charset=utf-8",
       JSON.stringify({ ok: true }));
+    return;
+  }
+
+  // textos del inicio
+  if (ruta === "/admin/textos/hero" && metodo === "POST") {
+    if (!sesion || (sesion.rol !== "admin" && sesion.rol !== "super")) {
+      redirigir(req, res, "/entrar");
+      return;
+    }
+    const campos = await formulario(req);
+    const linea = String(campos.get("linea") || "").trim().slice(0, 120);
+    const scripto = String(campos.get("scripto") || "").trim().slice(0, 160);
+    const parrafo = String(campos.get("parrafo") || "").trim().slice(0, 600);
+    datos.textos = datos.textos && typeof datos.textos === "object"
+      ? datos.textos
+      : {};
+    datos.textos.hero = { linea, scripto, parrafo };
+    guardarDatos();
+    redirigir(req, res, "/admin?ok=textos");
     return;
   }
 

@@ -24,6 +24,25 @@
 
   if (!img || !archivo || !escala || !aplicar || !preview) return;
 
+  const camposTexto = {
+    linea: document.getElementById("texto-linea"),
+    scripto: document.getElementById("texto-scripto"),
+    parrafo: document.getElementById("texto-parrafo"),
+  };
+  const textoPrevio = {
+    linea: document.getElementById("prev-linea"),
+    scripto: document.getElementById("prev-scripto"),
+    parrafo: document.getElementById("prev-parrafo"),
+  };
+  Object.keys(camposTexto).forEach((clave) => {
+    const campo = camposTexto[clave];
+    const destino = textoPrevio[clave];
+    if (!campo || !destino) return;
+    campo.addEventListener("input", () => {
+      destino.textContent = campo.value;
+    });
+  });
+
   const MAXIMO = 10 * 1024 * 1024;
   let x = Number(img.dataset.x) || 0;
   let y = Number(img.dataset.y) || 0;

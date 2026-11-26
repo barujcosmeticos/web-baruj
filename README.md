@@ -40,16 +40,21 @@ Los usuarios son locales de la web; no se validan contra el panel.
 - La **cuenta inicial** es única, no aparece en las listas y solo se usa para
   entrar por el login de administrador. Puede crear administradores y
   vendedores, cambiarles la clave y eliminarlos.
-- Un **administrador** puede cambiar la imagen del inicio y crear, cambiar la
-  clave o eliminar **vendedores**.
+- Un **administrador** puede cambiar la imagen y los textos del inicio, y
+  crear, cambiar la clave o eliminar **vendedores**.
 - Un **vendedor** entra a `/vendedor`; todavía no puede ver pedidos ni catálogo.
 
-### Imagen del inicio
+### Inicio: imagen y textos
 
-En `/admin`, la cuenta inicial y los administradores pueden subir un **PNG
-transparente de hasta 10 MB** que reemplaza los dos arcos del hero. La vista
-previa permite moverlo y ajustar el tamaño antes de aplicar. Al quitar la
-imagen, ese espacio queda vacío con el fondo normal y los arcos no vuelven.
+En `/admin`, la cuenta inicial y los administradores ven una vista previa del
+**inicio completo**, con el texto a la izquierda y la imagen a la derecha.
+
+- **Imagen**: un **PNG transparente de hasta 10 MB** reemplaza los dos arcos del
+  hero. Se puede mover y ajustar el tamaño antes de aplicar. Al quitarla, ese
+  espacio queda vacío con el fondo normal y los arcos no vuelven.
+- **Textos**: se editan el **título principal (H1)**, la **frase en script** y
+  el **párrafo**. Cada campo conserva la tipografía y el color originales; la
+  vista previa se actualiza mientras se escribe.
 
 ## Variables de entorno
 
